@@ -33,14 +33,26 @@ const legRight = person.append("line")
   .attr("x2", 10).attr("y2", 20)
   .attr("stroke", "black");
 
+// Walking speed from slider (1 = slow, 10 = fast)
+let speedSlider = document.getElementById("speed");
+let speed = parseFloat(speedSlider.value);
+
+speedSlider.addEventListener("input", () => {
+  speed = parseFloat(speedSlider.value);
+});
+
 let x = 50;
+let y = 200; // vertical center of SVG
 let direction = 1;
 
 function animate() {
-  x += direction;
+  const time = Date.now();
 
-  // Simulate walking by swinging legs
-  const angle = Math.sin(Date.now() / 200) * 15;
+  // The higher the speed, the faster the movement and leg swing
+  const legSpeed = 1000 / speed; // smaller is faster
+  const stepSize = speed * 0.5; // pixel step per frame
+
+  const angle = Math.sin(time / legSpeed) * 15;
   const radians = angle * Math.PI / 180;
 
   legLeft
@@ -51,7 +63,9 @@ function animate() {
     .attr("x2", 10 * Math.cos(radians))
     .attr("y2", 20 * Math.abs(Math.sin(radians)));
 
-  person.attr("transform", `translate(${x}, 300)`);
+  x += direction * stepSize;
+  person.attr("transform", `translate(${x}, ${y})`);
+
 
   if (x > 750 || x < 50) direction *= -1;
 
@@ -59,3 +73,4 @@ function animate() {
 }
 
 animate();
+
