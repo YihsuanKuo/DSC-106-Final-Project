@@ -74,3 +74,26 @@ function animate() {
 
 animate();
 
+const button = document.getElementById('trackButton');
+const logList = document.getElementById('log');
+
+let lastClickTime = null;
+const intervals = [];
+
+button.addEventListener('click', () => {
+  const now = new Date();
+  const timeString = now.toLocaleString(); // You can also use now.toISOString()
+  let interval = null;
+
+  if (lastClickTime) {
+      interval = (now - lastClickTime) / 1000; // in seconds
+      intervals.push(interval);
+  }
+
+  lastClickTime = now;
+
+  const logItem = document.createElement('li');
+  logItem.textContent = `Time interval ${interval}`;
+  
+  logList.appendChild(logItem);
+  });
