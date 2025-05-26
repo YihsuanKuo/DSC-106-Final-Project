@@ -1,3 +1,4 @@
+//walking man animation
 const svg = d3.select("#canvas");
 
 const person = svg.append("g")
@@ -74,26 +75,56 @@ function animate() {
 
 animate();
 
-const button = document.getElementById('trackButton');
+// interactivity for tracking steps 
+// first steps are recorded into an array when the button is clicked
+const trackButton = document.getElementById('trackButton');
 const logList = document.getElementById('log');
 
 let lastClickTime = null;
 const intervals = [];
 
-button.addEventListener('click', () => {
+trackButton.addEventListener('click', () => {
   const now = new Date();
   const timeString = now.toLocaleString(); // You can also use now.toISOString()
   let interval = null;
+  const logItem = document.createElement('li');  
 
   if (lastClickTime) {
       interval = (now - lastClickTime) / 1000; // in seconds
       intervals.push(interval);
+      console.log(`Interval: ${interval} seconds`);
+      logItem.textContent = `Time interval ${interval}`;
   }
-
+  else {
+    logItem.textContent = `First step recorded`;
+    logList.innerHTML = '';
+  }
+  console.log('array:',intervals)
   lastClickTime = now;
-
-  const logItem = document.createElement('li');
-  logItem.textContent = `Time interval ${interval}`;
-  
   logList.appendChild(logItem);
   });
+
+// Graph button that adds the intervals to a graph and clears the log
+const graphButton = document.getElementById('graphButton');
+graphButton.addEventListener('click', () => {
+  const logItem = document.createElement('li');  
+  logList.innerHTML = '';
+  logItem.textContent = `Plotting the following intervals: ${intervals.join(', ')}`;
+  plotGraph(intervals);
+  logList.appendChild(logItem);
+  if (intervals.length === 0) {
+    logItem.textContent = 'No intervals to plot. Please track steps first.';
+    logList.appendChild(logItem);
+    return;
+  }
+  //clear intervals array
+  intervals.length = 0;
+  lastClickTime = null;
+  console.log('cleared intervals array:', intervals)
+  // clear log list
+})
+
+// Function to plot the intervals on a graph
+function plotGraph(array){
+  console.log('I dont do anything yet')
+}
