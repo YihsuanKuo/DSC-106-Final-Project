@@ -6,4 +6,7 @@ body {
   #controls {
     margin-bottom: 10px;
   }
-  
+  .walking-path-svg {
+    margin: 20px auto;
+    display: block;
+}

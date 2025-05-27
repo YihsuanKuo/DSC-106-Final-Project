@@ -8,6 +8,12 @@
   <script src="walking.js" defer></script>
 </head>
 <body>
+  <h1>What is Gait?</h1>
+  <p>
+    Gait refers to the pattern of movement of the limbs during walking. It is an important indicator of physical and neurological health.
+    The animation below shows a simplified walking cycle with adjustable speed.
+  </p>
+
 
   <div id="controls">
     <label for="speed">Walking Speed: </label>
@@ -22,6 +28,9 @@
     <path id="foot-path2" d="M 0 0 L 0 -20 L -10 -20 L -10 0 Z" fill="green"></path>
   </svg>
 
-  <svg width="800" height="400" id="canvas"></svg>
+  <div id="walking-animation-container">
+    <svg width="800" height="400" id="canvas"></svg>
+  </div>
+  
 </body>
 </html>
