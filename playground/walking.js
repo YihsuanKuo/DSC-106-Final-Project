@@ -74,30 +74,58 @@
 
 // animate();
 
-// const button = document.getElementById('trackButton');
-// const logList = document.getElementById('log');
+// interactivity for tracking steps 
+// first steps are recorded into an array when the button is clicked
+const button = document.getElementById('trackButton');
+const logList = document.getElementById('log');
 
-// let lastClickTime = null;
-// const intervals = [];
+let lastClickTime = null;
+const intervals = [];
 
-// button.addEventListener('click', () => {
-//   const now = new Date();
-//   const timeString = now.toLocaleString(); // You can also use now.toISOString()
-//   let interval = null;
+button.addEventListener('click', () => {
+  const now = new Date();
+  const timeString = now.toLocaleString(); // You can also use now.toISOString()
+  let interval = null;
 
-//   if (lastClickTime) {
-//       interval = (now - lastClickTime) / 1000; // in seconds
-//       intervals.push(interval);
-//   }
+  if (lastClickTime) {
+      interval = (now - lastClickTime) / 1000; // in seconds
+      intervals.push(interval);
+  }
 
-//   lastClickTime = now;
+  lastClickTime = now;
 
-//   const logItem = document.createElement('li');
-//   logItem.textContent = `Time interval ${interval}`;
+  const logItem = document.createElement('li');
+  logItem.textContent = `Time interval ${interval}`;
   
-//   logList.appendChild(logItem);
-//   });
+  logList.appendChild(logItem);
+});
 
+// Graph button that adds the intervals to a graph and clears the log
+const graphButton = document.getElementById('graphButton');
+graphButton.addEventListener('click', () => {
+  const logItem = document.createElement('li');  
+  logList.innerHTML = '';
+  logItem.textContent = `Plotting the following intervals: ${intervals.join(', ')}`;
+  plotGraph(intervals);
+  logList.appendChild(logItem);
+  if (intervals.length === 0) {
+    logItem.textContent = 'No intervals to plot. Please track steps first.';
+    logList.appendChild(logItem);
+    return;
+  }
+  //clear intervals array
+  intervals.length = 0;
+  lastClickTime = null;
+  console.log('cleared intervals array:', intervals)
+  // clear log list
+})
+
+// Function to plot the intervals on a graph
+function plotGraph(array){
+  console.log('I dont do anything yet')
+}
+
+// walking animation script
 const svg = d3.select("#canvas");
 
 const person = svg.append("g")
@@ -211,7 +239,8 @@ function animate() {
   }
 
   animate();
-  // Top-down foot animation script
+
+// Top-down foot animation script
 let currentSpeed = 1;
 let animationIntervals = [];
 
