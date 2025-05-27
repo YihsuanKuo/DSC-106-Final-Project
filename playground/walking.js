@@ -74,29 +74,29 @@
 
 // animate();
 
-// const button = document.getElementById('trackButton');
-// const logList = document.getElementById('log');
+const button = document.getElementById('trackButton');
+const logList = document.getElementById('log');
 
-// let lastClickTime = null;
-// const intervals = [];
+let lastClickTime = null;
+const intervals = [];
 
-// button.addEventListener('click', () => {
-//   const now = new Date();
-//   const timeString = now.toLocaleString(); // You can also use now.toISOString()
-//   let interval = null;
+button.addEventListener('click', () => {
+  const now = new Date();
+  const timeString = now.toLocaleString(); // You can also use now.toISOString()
+  let interval = null;
 
-//   if (lastClickTime) {
-//       interval = (now - lastClickTime) / 1000; // in seconds
-//       intervals.push(interval);
-//   }
+  if (lastClickTime) {
+      interval = (now - lastClickTime) / 1000; // in seconds
+      intervals.push(interval);
+  }
 
-//   lastClickTime = now;
+  lastClickTime = now;
 
-//   const logItem = document.createElement('li');
-//   logItem.textContent = `Time interval ${interval}`;
+  const logItem = document.createElement('li');
+  logItem.textContent = `Time interval ${interval}`;
   
-//   logList.appendChild(logItem);
-//   });
+  logList.appendChild(logItem);
+  });
 
 const svg = d3.select("#canvas");
 
