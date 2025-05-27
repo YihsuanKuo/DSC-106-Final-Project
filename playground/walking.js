@@ -211,3 +211,162 @@ function animate() {
   }
 
   animate();
+  // Top-down foot animation script
+let currentSpeed = 1;
+let animationIntervals = [];
+
+// Create simple foot shape - clean outline only
+function createSimpleFootPath() {
+    // Simple foot outline - longer and much narrower
+    return "M-3,20 Q-4,12 -3,4 Q0,-2 8,-3 Q18,-2 26,0 Q30,2 30,6 Q28,12 25,20 Q20,30 12,38 Q4,42 -1,41 Q-4,38 -4,32 Q-3,26 -3,20 Z";
+}
+
+function initializeFootAnimation() {
+    // Clear any existing intervals
+    animationIntervals.forEach(interval => clearInterval(interval));
+    animationIntervals = [];
+
+    // Gait parameters
+    const strideTime = 1200 / currentSpeed;
+    const swingTime = 400 / currentSpeed;
+    const stepLength = 60; // How far forward/back the foot moves
+
+    const svg = d3.select("#foot-animation");
+    const width = +svg.attr("width");
+    const height = +svg.attr("height");
+
+    // Clear previous animation
+    svg.selectAll("*").remove();
+
+    // Add title
+    svg.append("text")
+        .attr("x", width/2)
+        .attr("y", 25)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "16px")
+        .attr("font-weight", "bold")
+        .attr("fill", "#333")
+        .text("Walking Animation - Top View");
+
+    // Create foot groups
+    const leftFootGroup = svg.append("g")
+        .attr("class", "left-foot")
+        .attr("transform", `translate(${width/2 - 80}, ${height/2})`);
+    
+    const rightFootGroup = svg.append("g")
+        .attr("class", "right-foot")
+        .attr("transform", `translate(${width/2 + 80}, ${height/2})`);
+
+    // Create left foot - simple clean shape
+    leftFootGroup.append("path")
+        .attr("d", createSimpleFootPath())
+        .attr("fill", "#666")
+        .attr("stroke", "#333")
+        .attr("stroke-width", 1.5);
+
+    // Create right foot (mirrored) - simple clean shape
+    rightFootGroup.append("path")
+        .attr("d", createSimpleFootPath())
+        .attr("transform", "scale(-1, 1)")
+        .attr("fill", "#666")
+        .attr("stroke", "#333")
+        .attr("stroke-width", 1.5);
+
+    // Add foot labels - moved further down to avoid collision
+    svg.append("text")
+        .attr("x", width/2 - 80)
+        .attr("y", height/2 + 90)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "12px")
+        .attr("fill", "#666")
+        .text("Left Foot");
+
+    svg.append("text")
+        .attr("x", width/2 + 80)
+        .attr("y", height/2 + 90)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "12px")
+        .attr("fill", "#666")
+        .text("Right Foot");
+
+    // Ground contact indicators
+    const leftContact = svg.append("circle")
+        .attr("cx", width/2 - 80)
+        .attr("cy", height/2 + 100)
+        .attr("r", 6)
+        .attr("fill", "#4CAF50");
+
+    const rightContact = svg.append("circle")
+        .attr("cx", width/2 + 80)
+        .attr("cy", height/2 + 100)
+        .attr("r", 6)
+        .attr("fill", "#4CAF50");
+
+    svg.append("text")
+        .attr("x", width/2)
+        .attr("y", height - 20)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "10px")
+        .attr("fill", "#666")
+        .text("Green = Ground Contact, Orange = Swing Phase");
+
+    function animateWalk() {
+        // Left foot movement - forward during swing, back during stance
+        leftFootGroup.transition()
+            .duration(swingTime)
+            .attr("transform", `translate(${width/2 - 80}, ${height/2 - stepLength/2}) scale(0.85)`)
+            .style("opacity", 0.6)
+            .transition()
+            .duration(strideTime - swingTime)
+            .attr("transform", `translate(${width/2 - 80}, ${height/2 + stepLength/2}) scale(1)`)
+            .style("opacity", 1);
+
+        // Left foot contact indicator
+        leftContact.transition()
+            .duration(swingTime)
+            .attr("fill", "#FF9800")
+            .transition()
+            .duration(strideTime - swingTime)
+            .attr("fill", "#4CAF50");
+
+        // Right foot movement (offset by half stride) - opposite pattern
+        rightFootGroup.transition()
+            .delay(strideTime / 2)
+            .duration(swingTime)
+            .attr("transform", `translate(${width/2 + 80}, ${height/2 - stepLength/2}) scale(0.85)`)
+            .style("opacity", 0.6)
+            .transition()
+            .duration(strideTime - swingTime)
+            .attr("transform", `translate(${width/2 + 80}, ${height/2 + stepLength/2}) scale(1)`)
+            .style("opacity", 1);
+
+        // Right foot contact indicator
+        rightContact.transition()
+            .delay(strideTime / 2)
+            .duration(swingTime)
+            .attr("fill", "#FF9800")
+            .transition()
+            .duration(strideTime - swingTime)
+            .attr("fill", "#4CAF50");
+    }
+
+    // Start animation loop
+    const animationInterval = setInterval(animateWalk, strideTime);
+    animationIntervals.push(animationInterval);
+    animateWalk();
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Speed control
+    const speedSelector = document.getElementById("speed-selector");
+    if (speedSelector) {
+        speedSelector.addEventListener("change", function() {
+            currentSpeed = parseFloat(this.value);
+            initializeFootAnimation();
+        });
+    }
+
+    // Initialize foot animation
+    initializeFootAnimation();
+});
