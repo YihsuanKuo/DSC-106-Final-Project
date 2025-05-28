@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Initial Prototype</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="chart.js" defer></script>
+</head>
+<body>
+  <h1>Visualization: click and drag and zoom pls</h1>
+  <div id = 'text'>
+    <p>
+        1. As a group, we created one d3 visualization of one patient, with zoom interaction and drag interaction. We created a way to track your own cadence and be able to graph it onto the d3 visualization. We also created a gait animation that visualizes feet walking in proper gait, but we were unable to put it on the website yet. We have also explored another dataset that has more gait information and created a large csv file. 
+    </p>
+    <p>
+        2. The most challenging part of the project has been the collaboration. We all have our own interesting ideas that we are having difficulties piecing together. Currently, the button for inputting your own gait is a bit buggy, because the grouping does not include the new dots. We foresee that the hardest part would be to incorporate all those ideas into a scrolly story tell. 
+    </p>
+  </div>
+  
+  <svg></svg>
+
+  <button id="trackButton">Click me</button>
+  <ul id="log"></ul>
+  <button id="graphButton">Graph</button>
+
+  <div id="tooltip" style="
+  position: absolute;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;">
+  </div>
+</body>
+</html>

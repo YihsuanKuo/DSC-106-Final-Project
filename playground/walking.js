@@ -96,7 +96,7 @@ button.addEventListener('click', () => {
   logItem.textContent = `Time interval ${interval}`;
   
   logList.appendChild(logItem);
-  });
+});
 
 const svg = d3.select("#canvas");
 

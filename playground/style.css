@@ -24,3 +24,12 @@ body {
     display: block;
     margin: 0 auto;
 }
+
+svg {
+  width: 100%;
+  height: 500px;
+}
+
+#text{
+  max-width: 800px;
+}
