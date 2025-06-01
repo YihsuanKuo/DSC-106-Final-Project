@@ -1,16 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gait Analysis</title>
-    <link rel="stylesheet" href="style.css">
-    <script type="module" src="main.js"></script>
-    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" /> 
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bob's Walk</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <script src="main.js" type="module"></script>
 </head>
 <body>
-    <h1>Gait Analysis 👣</h1>
-    <p>Gait is the time it takes from one heel strike to another heel strike.</p>
-    
+  <h1>Hi, This is Bob</h1>
+  <p>Every time you click on Bob, he will take a step.</p>
+
+  <div id="bob">🧍</div>
+  <div id="controls">
+    <button id="startBtn">Start Recording</button>
+    <span id="status"></span>
+  </div>
+
+  <div class="chart-container">
+    <svg id="chart" width="800" height="400"></svg>
+  </div>
+
+  <select id="personSelect">
+    <option value="">-- Select a person --</option>
+  </select>
 </body>
 </html>
