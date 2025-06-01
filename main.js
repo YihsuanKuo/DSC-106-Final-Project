@@ -32,25 +32,23 @@ function reset() {
 function drawChart() {
     const intervalData = [];
 
-    // Sort steps in case they aren't already sorted
     const sortedSteps = steps.slice().sort((a, b) => a - b);
 
-    // Calculate intervals (in seconds) and assign a timestamp (average of two steps)
     for (let i = 1; i < sortedSteps.length; i++) {
-        const interval = (sortedSteps[i] - sortedSteps[i - 1]) / 1000; // convert ms to sec
-        const time = (sortedSteps[i] + sortedSteps[i - 1]) / 2000; // average time in seconds
+        const interval = (sortedSteps[i] - sortedSteps[i - 1]) / 1000; // interval in seconds
+        const time = (sortedSteps[i] + sortedSteps[i - 1]) / 2000; // midpoint in seconds
         intervalData.push({ time, interval });
     }
 
-    const margin = { top: 20, right: 30, bottom: 30, left: 40 },
+    const margin = { top: 20, right: 30, bottom: 50, left: 60 },
         width = 800 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
     const svg = d3.select("svg");
-    svg.selectAll("*").remove(); // Clear previous chart if any
+    svg.selectAll("*").remove(); // Clear previous chart
 
     const x = d3.scaleLinear()
-        .domain(d3.extent(intervalData, d => d.time))
+        .domain([0, 10])
         .range([0, width]);
 
     const y = d3.scaleLinear()
@@ -67,7 +65,24 @@ function drawChart() {
     chart.append("g")
         .call(d3.axisLeft(y));
 
-    // Plot dots
+    // X-axis label
+    chart.append("text")
+        .attr("text-anchor", "middle")
+        .attr("x", width / 2)
+        .attr("y", height + 40)
+        .text("Time (seconds)")
+        .style("font-size", "14px");
+
+    // Y-axis label
+    chart.append("text")
+        .attr("text-anchor", "middle")
+        .attr("transform", `rotate(-90)`)
+        .attr("x", -height / 2)
+        .attr("y", -45)
+        .text("Step Interval (seconds)")
+        .style("font-size", "14px");
+
+    // Plot intervals as dots
     chart.selectAll("circle")
         .data(intervalData)
         .enter()
@@ -83,26 +98,26 @@ function startWalk() {
     startTime = performance.now();
     statusEl.textContent = "Make Bob walk for 10 seconds…";
     setTimeout(() => {
-    clearInterval(intervalId);
-    statusEl.textContent = "Here are how long each step took in those 10 seconds.";
-    const selected = SAMPLE_PEOPLE.find(p => p.id == personSelect.value);
-    drawChart(selected);
+        clearInterval(intervalId);
+        statusEl.textContent = "Here are how long each step took in those 10 seconds.";
+        const selected = SAMPLE_PEOPLE.find(p => p.id == personSelect.value);
+        drawChart(selected);
+        // change nextSlideBtn to have different text
+        document.getElementById("nextSlideBtn").textContent = "Next Slide ➡️";
     }, WALK_DURATION_MS);
 }
 
+let stepRight = true;
 bobEl.addEventListener("click", () => {
-if (!startTime) return;
-const now = performance.now();
-if (now - startTime <= WALK_DURATION_MS) {
-    const stepIndex = steps.length;
-    steps.push(now - startTime);
-    
-    // Alternate direction: even = right, odd = left
-    const direction = stepIndex % 2 === 0 ? 1 : -1;
-    const distance = 10 * direction;
-
+    const distance = 10 * (stepRight ? 1 : -1);
     bobEl.style.transform = `translateX(${distance}px)`;
-}
+    stepRight = !stepRight;
+    if (startTime){
+        const now = performance.now();
+        if (now - startTime <= WALK_DURATION_MS) {
+            steps.push(now - startTime);
+        }
+    }
 });
 
 startBtn.addEventListener("click", startWalk);
@@ -112,4 +127,13 @@ personSelect.addEventListener("change", () => {
     const selected = SAMPLE_PEOPLE.find(p => p.id == personSelect.value);
     drawChart(selected);
     }
+});
+
+document.getElementById("nextSlideBtn").addEventListener("click", () => {
+    // Option 1: Scroll smoothly
+    document.getElementById("slide2").style.display = "block";
+    document.getElementById("slide2").scrollIntoView({ behavior: "smooth" });
+
+    // // Option 2 (Optional): Hide slide1 and show slide2 instead
+    // document.getElementById("slide1").style.display = "none";
 });
