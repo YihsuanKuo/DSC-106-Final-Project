@@ -1,5 +1,6 @@
 const AVG_STEPS_PER_SEC = 1.5;
 const WALK_DURATION_MS = 10000;
+let bobDots = [];
 const SAMPLE_PEOPLE = [
     { id: 1, name: "Alice", disease: "None", avgStepsPerSec: 1.7 },
     { id: 2, name: "Ben", disease: "Diabetes", avgStepsPerSec: 1.2 },
@@ -83,14 +84,16 @@ function drawChart() {
         .style("font-size", "14px");
 
     // Plot intervals as dots
-    chart.selectAll("circle")
+    bobDots = chart.selectAll(".bob-dot")
         .data(intervalData)
         .enter()
         .append("circle")
+        .attr("class", "bob-dot")
         .attr("cx", d => x(d.time))
         .attr("cy", d => y(d.interval))
         .attr("r", 4)
-        .attr("fill", "#007acc");
+        .attr("fill", "#007acc")
+        .attr("opacity", 0.7);
 }
 
 function startWalk() {
@@ -151,8 +154,23 @@ function replaySteps() {
   bobSteps.forEach((t, i) => {
     setTimeout(() => {
       takeStep();
+
+      // Highlight the i-th dot directly by index
+      const dot = d3.select(bobDots.nodes()[i]);
+      dot.transition()
+         .duration(200)
+         .attr("fill", "orange")
+         .attr("r", 6);
+
+        setTimeout(() => {
+            dot.transition()
+                .duration(200)
+                .attr("fill", "#007acc")
+                .attr("r", 4);
+        }, 500);
     }, t);
   });
+
 }
 
 document.getElementById("replayBtn").addEventListener("click", () => {
