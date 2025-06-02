@@ -20,10 +20,10 @@ SAMPLE_PEOPLE.forEach(p => {
     personSelect.appendChild(option);
 });
 
-let steps = [], startTime = null, intervalId = null;
+let bobSteps = [], startTime = null, intervalId = null;
 
 function reset() {
-    steps = [];
+    bobSteps = [];
     startTime = null;
     svg.selectAll("*").remove();
     statusEl.textContent = "";
@@ -32,7 +32,7 @@ function reset() {
 function drawChart() {
     const intervalData = [];
 
-    const sortedSteps = steps.slice().sort((a, b) => a - b);
+    const sortedSteps = bobSteps.slice().sort((a, b) => a - b);
 
     for (let i = 1; i < sortedSteps.length; i++) {
         const interval = (sortedSteps[i] - sortedSteps[i - 1]) / 1000; // interval in seconds
@@ -104,18 +104,25 @@ function startWalk() {
         drawChart(selected);
         // change nextSlideBtn to have different text
         document.getElementById("nextSlideBtn").textContent = "Next Slide ➡️";
+        document.getElementById("replayBtn").style.display = "inline-block";
     }, WALK_DURATION_MS);
 }
 
 let stepRight = true;
-bobEl.addEventListener("click", () => {
+
+// makes bob take step (translate 10 px right or left)
+function takeStep() {
     const distance = 10 * (stepRight ? 1 : -1);
     bobEl.style.transform = `translateX(${distance}px)`;
     stepRight = !stepRight;
+}
+
+bobEl.addEventListener("click", () => {
+    takeStep();
     if (startTime){
         const now = performance.now();
         if (now - startTime <= WALK_DURATION_MS) {
-            steps.push(now - startTime);
+            bobSteps.push(now - startTime);
         }
     }
 });
@@ -137,3 +144,15 @@ document.getElementById("nextSlideBtn").addEventListener("click", () => {
     // // Option 2 (Optional): Hide slide1 and show slide2 instead
     // document.getElementById("slide1").style.display = "none";
 });
+
+// replay bobsteps
+function replaySteps() {
+  const bobEl = document.getElementById("bob");
+  bobSteps.forEach((t, i) => {
+    setTimeout(() => {
+      takeStep();
+    }, t);
+  });
+}
+
+document.getElementById("replayBtn").addEventListener("click", replaySteps);
