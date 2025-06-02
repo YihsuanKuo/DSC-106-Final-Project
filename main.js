@@ -155,4 +155,14 @@ function replaySteps() {
   });
 }
 
-document.getElementById("replayBtn").addEventListener("click", replaySteps);
+document.getElementById("replayBtn").addEventListener("click", () => {
+    replaySteps();
+    replayBtn.disabled = true;
+    replayBtn.textContent = "👣 Bob is currently replaying...";
+    
+    const totalReplayTime = bobSteps[bobSteps.length - 1] || 0;
+    setTimeout(() => {
+    replayBtn.disabled = false;
+    replayBtn.textContent = "🔁 Replay Bob's Walk";
+    }, totalReplayTime + 500); // Add slight buffer
+});
