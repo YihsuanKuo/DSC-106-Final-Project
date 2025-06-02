@@ -14,7 +14,7 @@
     <h1>Hi, This is Bob</h1>
     <p>Every time you click on Bob, he will take a step.</p>
 
-    <div id="bob">🧍</div>
+    <div id="bob", class="person">🧍</div>
     <div id="controls">
     <button id="startBtn">Start Recording</button>
     <span id="status"></span>
@@ -29,10 +29,19 @@
   </section>
   <section id="slide2" class="slide" style="display: none;">
   <!-- Introduce the dataset! -->
+    <h1>This is not Bob.</h1>
+    <div id="control" class="person">🧍‍♂️</div>
+    <p>This is how he walks. </p>
+    <button id="nextSlideBtn" style="display:inline;">Skip Bob ☹️</button> 
+  </section>
+  <section id="slide3" class="slide" style="display: none;">
+    <h1>Bob's Walk</h1>
+    <p>Bob's walk is a simple visualization of how Bob walks.</p>
+    <div id="bobWalk"></div>
     <select id="personSelect">
-        🧍‍♂️🧍‍♀️
-    <option value="">-- Select a person --</option>
+      🧍‍♂️🧍‍♀️
     </select>
+    <option value="">-- Select a person --</option>
   </section>
 </body>
 </html>
