@@ -17,6 +17,7 @@
             
             <div class="bob-container">
                 <span id="bob">🧍</span>
+                <div id="timer1" class="timer"></div>
             </div>
             
             <div class="controls">
@@ -32,7 +33,10 @@
                 <svg id="bobChartSvg" width="800" height="400"></svg>
             </div>
             
-            <button id="nextBtn1" class="next-btn" disabled>Next: Meet the Control →</button>
+            <div class="navigation-buttons">
+                <button class="prev-btn" disabled>← Previous</button>
+                <button id="nextBtn1" class="next-btn" disabled>Next: Meet the Control →</button>
+            </div>
         </div>
 
         <!-- Slide 2: Control Character -->
@@ -49,7 +53,10 @@
             </div>
             
             <button id="showControlBtn" class="primary-btn">📊 Show Control Pattern</button>
-            <button id="nextBtn2" class="next-btn" style="display: none;">Next: Compare Patterns →</button>
+            <div class="navigation-buttons">
+                <button class="prev-btn">← Previous</button>
+                <button id="nextBtn2" class="next-btn" style="display: none;">Next: Compare Patterns →</button>
+            </div>
         </div>
 
         <!-- Slide 3: Comparison -->
@@ -84,7 +91,10 @@
                 <svg id="chart" width="1200" height="600"></svg>
             </div>
             
-            <button id="nextBtn3" class="next-btn">Next: Try it yourself! →</button>
+            <div class="navigation-buttons">
+                <button class="prev-btn">← Previous</button>
+                <button id="nextBtn3" class="next-btn">Next: Try it yourself! →</button>
+            </div>
         </div>
 
         <!-- Slide 4: Interactive Playground -->
@@ -96,6 +106,7 @@
                 <div class="playground-left">
                     <div class="bob-container">
                         <span id="playgroundBob">🧍</span>
+                        <div id="timer4" class="timer"></div>
                     </div>
                     
                     <div class="controls">
@@ -123,6 +134,10 @@
                         <svg id="playgroundChart" width="100%" height="500" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet"></svg>
                     </div>
                 </div>
+            </div>
+            
+            <div class="navigation-buttons">
+                <button class="prev-btn">← Previous</button>
             </div>
         </div>
 

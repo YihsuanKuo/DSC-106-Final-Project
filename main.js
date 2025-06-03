@@ -20,6 +20,41 @@ let nextBtn1, nextBtn2, nextBtn3, showControlBtn;
 // Store the last recorded pattern
 let lastBobPattern = null;
 
+let timerInterval = null;
+
+function updateTimer(timerElement, remainingTime) {
+    const seconds = Math.ceil(remainingTime / 1000);
+    timerElement.textContent = `${seconds}s`;
+}
+
+function startTimer(timerElement) {
+    const startTime = Date.now();
+    const duration = WALK_DURATION_MS;
+    
+    // Show and initialize the timer
+    timerElement.style.display = 'block';
+    updateTimer(timerElement, duration);
+    
+    // Clear any existing interval
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
+    
+    // Update timer every 100ms
+    timerInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, duration - elapsed);
+        
+        updateTimer(timerElement, remaining);
+        
+        // Stop the timer when time is up
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+            timerElement.style.display = 'none';
+        }
+    }, 100);
+}
+
 // Initialize DOM elements after page loads
 document.addEventListener('DOMContentLoaded', function() {
     bobEl = document.getElementById("bob");
@@ -43,12 +78,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeApp() {
     // Populate dropdown
-SAMPLE_PEOPLE.forEach(p => {
-    const option = document.createElement("option");
-    option.value = p.id;
-    option.textContent = `${p.name} (${p.disease})`;
-    personSelect.appendChild(option);
-});
+    SAMPLE_PEOPLE.forEach(p => {
+        const option = document.createElement("option");
+        option.value = p.id;
+        option.textContent = `${p.name} (${p.disease})`;
+        personSelect.appendChild(option);
+    });
     
     setupEventListeners();
     console.log('Gait analyzer initialized');
@@ -90,19 +125,29 @@ function setupEventListeners() {
         }
         
         if (bobSteps.length > 0) {
-            await drawChart(currentComparison);
+            const showLinesChecked = showLinesCheckbox ? showLinesCheckbox.checked : false;
+            await drawChart(currentComparison, null, showLinesChecked);
         }
     });
 
     showLinesCheckbox.addEventListener("change", async () => {
         if (bobSteps.length > 0) {
-            await drawChart(currentComparison);
+            await drawChart(currentComparison, null, showLinesCheckbox.checked);
         }
     });
 
     // Slide indicators
     document.querySelectorAll('.dot').forEach((dot, index) => {
         dot.addEventListener('click', () => goToSlide(index));
+    });
+
+    // Navigation buttons
+    document.querySelectorAll('.prev-btn').forEach((btn, index) => {
+        btn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                goToSlide(currentSlide - 1);
+            }
+        });
     });
 }
 
@@ -111,6 +156,7 @@ function goToSlide(slideIndex) {
     
     const slides = document.querySelectorAll('.slide');
     const dots = document.querySelectorAll('.dot');
+    const prevButtons = document.querySelectorAll('.prev-btn');
     
     // Remove active class from current slide and dots
     slides[currentSlide].classList.remove('active');
@@ -122,6 +168,16 @@ function goToSlide(slideIndex) {
     
     // Update current slide
     currentSlide = slideIndex;
+    
+    // Update previous buttons state
+    prevButtons.forEach(btn => {
+        btn.disabled = currentSlide === 0;
+    });
+    
+    // Update next buttons visibility based on recording state
+    if (currentSlide === 0) {
+        nextBtn1.disabled = bobSteps.length === 0;
+    }
 }
 
 let bobSteps = [], startTime = null, intervalId = null;
@@ -142,6 +198,16 @@ function reset() {
     if (nextBtn1) nextBtn1.disabled = true;
     startBtn.disabled = false;
     startBtn.textContent = "🎬 Start Recording Bob";
+    
+    // Reset and hide timers
+    const timer1 = document.getElementById('timer1');
+    const timer4 = document.getElementById('timer4');
+    if (timer1) timer1.style.display = 'none';
+    if (timer4) timer4.style.display = 'none';
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
 }
 
 // Load CSV data with better error handling
@@ -422,7 +488,11 @@ function drawBobChart(stepData) {
 }
 
 async function drawChart(comparisonData = null, targetSvg = null, showLines = false) {
-    const svg = targetSvg || d3.select('#chart');
+    // If no target SVG is specified, use the appropriate one based on current slide
+    if (!targetSvg) {
+        targetSvg = currentSlide === 3 ? d3.select('#playgroundChart') : d3.select('#chart');
+    }
+    const svg = targetSvg;
     svg.selectAll("*").remove();
 
     const bobStepData = processStepsToData(bobSteps);
@@ -596,6 +666,14 @@ function startWalk() {
     startBtn.disabled = true;
     startBtn.textContent = "⏳ Recording...";
     statusEl.textContent = "🚶‍♂️ Make Bob walk for 10 seconds by clicking on him!";
+    
+    // Start the timer in the appropriate slide
+    const timer = currentSlide === 0 ? 
+        document.getElementById('timer1') : 
+        document.getElementById('timer4');
+    if (timer) {
+        startTimer(timer);
+    }
     
     console.log('Recording started at:', startTime);
     
