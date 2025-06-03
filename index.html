@@ -1,47 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bob's Walk</title>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <link rel="stylesheet" href="style.css" />
-  <script src="main.js" type="module"></script>
-  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" /> 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bob's Gait Pattern Analyzer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <section id="slide1" class="slide">
-    <h1>Hi, This is Bob</h1>
-    <p>Every time you click on Bob, he will take a step.</p>
-
-    <div id="bob", class="person">🧍</div>
-    <div id="controls">
-    <button id="startBtn">Start Recording</button>
-    <span id="status"></span>
+    <div class="container">
+        <div class="header">
+            <h1>🚶‍♂️ Bob's Gait Pattern Analyzer</h1>
+            <p class="instructions">Click on Bob to make him walk, then compare his gait with different medical conditions</p>
+        </div>
+        
+        <div class="bob-section">
+            <h2>👋 Meet Bob</h2>
+            <p class="instructions">Every time you click on Bob, he will take a step. Record his walking pattern!</p>
+            
+            <div class="bob-container">
+                <span id="bob">🧍</span>
+            </div>
+            
+            <div class="controls">
+                <button id="startBtn">🎬 Start Recording</button>
+                <button id="replayBtn" style="display: none;">🔁 Replay Bob's Walk</button>
+            </div>
+            
+            <div id="status"></div>
+        </div>
+        
+        <div class="comparison-section">
+            <h2>📊 Compare Gait Patterns</h2>
+            <p class="instructions">Compare Bob's walking pattern with different medical conditions</p>
+            
+            <div class="comparison-controls">
+                <label for="personSelect">Compare with:</label>
+                <select id="personSelect">
+                    <option value="">-- Select a condition --</option>
+                </select>
+                
+                <div class="checkbox-container">
+                    <label for="showLines">
+                        <input type="checkbox" id="showLines"> Show connecting lines
+                    </label>
+                </div>
+            </div>
+            
+            <div class="legend" id="legend" style="display: none;">
+                <div class="legend-item">
+                    <div class="legend-dot" style="background-color: #007acc;"></div>
+                    <span>Bob's Pattern</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background-color: #ff6b6b;"></div>
+                    <span id="comparisonLabel">Comparison</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <svg id="chart" width="1400" height="800"></svg>
+        </div>
     </div>
 
-    <div class="chart-container">
-    <svg id="chart" width="800" height="400"></svg>
-    </div>
-    <button id="replayBtn" style="display:none;">🔁 Replay Bob's Walk</button>
-    <button id="replayDisplay" style="display:none;">🔁 Currently Replaying Bob</button>
-    <button id="nextSlideBtn" style="display:inline;">Skip Bob ☹️</button> 
-  </section>
-  <section id="slide2" class="slide" style="display: none;">
-  <!-- Introduce the dataset! -->
-    <h1>This is not Bob.</h1>
-    <div id="control" class="person">🧍‍♂️</div>
-    <p>This is how he walks. </p>
-    <button id="nextSlideBtn" style="display:inline;">Skip Bob ☹️</button> 
-  </section>
-  <section id="slide3" class="slide" style="display: none;">
-    <h1>Bob's Walk</h1>
-    <p>Bob's walk is a simple visualization of how Bob walks.</p>
-    <div id="bobWalk"></div>
-    <select id="personSelect">
-      🧍‍♂️🧍‍♀️
-    </select>
-    <option value="">-- Select a person --</option>
-  </section>
+    <script src="main.js"></script>
 </body>
 </html>
