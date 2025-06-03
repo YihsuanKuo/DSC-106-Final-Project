@@ -1,209 +1,307 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    margin: 0;
-    padding: 20px;
     min-height: 100vh;
-    color: #333;
+    overflow-x: hidden;
 }
 
-.container {
-    max-width: 1500px;
-    margin: 0 auto;
-    background: white;
-    border-radius: 15px;
-    padding: 30px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+.slides-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
 }
 
-.header {
+.slide {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
     text-align: center;
-    margin-bottom: 30px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    overflow-y: auto;
 }
 
-.header h1 {
-    font-size: 2.5rem;
-    margin: 0;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+.slide.active {
+    opacity: 1;
+    transform: translateX(0);
 }
 
-.bob-section {
-    background: #f8f9ff;
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 25px;
-    border: 2px solid #e1e8ff;
+.slide.prev {
+    transform: translateX(-100%);
 }
 
+.slide h1 {
+    font-size: 3rem;
+    color: white;
+    margin-bottom: 15px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.slide h2 {
+    font-size: 2rem;
+    color: white;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.slide h3 {
+    font-size: 1.5rem;
+    color: white;
+    margin-bottom: 15px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.slide p {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 20px;
+    max-width: 800px;
+    line-height: 1.5;
+}
+
+/* Slide 1 - Meet Bob */
 .bob-container {
-    text-align: center;
     margin: 20px 0;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 #bob {
-    font-size: 4rem;
+    font-size: 6rem;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
     display: inline-block;
     user-select: none;
 }
 
 #bob:hover {
     transform: scale(1.1);
+    filter: brightness(1.2);
 }
 
 .controls {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
     margin: 20px 0;
 }
 
 button {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    border: none;
     padding: 12px 24px;
-    border-radius: 8px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 25px;
     cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
+    margin: 0 10px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-button:hover:not(:disabled) {
+.primary-btn {
+    background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+}
+
+.primary-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
 }
 
-button:disabled {
-    opacity: 0.6;
+.secondary-btn {
+    background: linear-gradient(45deg, #4834d4, #686de0);
+    color: white;
+    box-shadow: 0 4px 15px rgba(72, 52, 212, 0.4);
+}
+
+.secondary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 52, 212, 0.6);
+}
+
+.next-btn {
+    background: linear-gradient(45deg, #00d2d3, #54a0ff);
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 210, 211, 0.4);
+}
+
+.next-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 210, 211, 0.6);
+}
+
+.next-btn:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
     transform: none;
 }
 
+#status {
+    font-size: 1.2rem;
+    color: #ffd700;
+    margin: 15px 0;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Slide 2 - Control */
+.control-character {
+    font-size: 6rem;
+    margin: 30px 0;
+    animation: gentle-sway 3s ease-in-out infinite;
+}
+
+@keyframes gentle-sway {
+    0%, 100% { transform: rotate(-2deg); }
+    50% { transform: rotate(2deg); }
+}
+
+/* Slide 3 - Comparison */
+.comparison-controls {
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.comparison-controls label {
+    font-size: 1.2rem;
+    color: white;
+    font-weight: 600;
+}
+
 select {
-    padding: 10px 15px;
-    border: 2px solid #e1e8ff;
-    border-radius: 8px;
-    font-size: 16px;
-    background: white;
+    padding: 10px 16px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    min-width: 300px;
     cursor: pointer;
 }
 
-select:focus {
-    outline: none;
-    border-color: #667eea;
-}
-
-.comparison-section {
-    background: #fff8f0;
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 25px;
-    border: 2px solid #ffe1cc;
-}
-
-.chart-container {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    margin: 20px 0;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    overflow: hidden;
-    width: 100%;
-}
-
-#chart {
-    width: 100%;
-    height: auto;
-    max-width: 1400px;
-    display: block;
-    margin: 0 auto;
-}
-
-#status {
-    text-align: center;
-    font-size: 18px;
-    font-weight: 600;
-    margin: 15px 0;
-    min-height: 25px;
-    color: #667eea;
-}
-
-.instructions {
-    text-align: center;
-    font-size: 18px;
-    margin: 15px 0;
-    color: #666;
-}
-
-.comparison-controls {
+.checkbox-container {
     display: flex;
-    gap: 15px;
     align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin: 20px 0;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.checkbox-container input[type="checkbox"] {
+    transform: scale(1.5);
+    cursor: pointer;
 }
 
 .legend {
     display: flex;
-    gap: 20px;
-    justify-content: center;
+    gap: 30px;
     margin: 15px 0;
-    flex-wrap: wrap;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.8);
-    padding: 8px 12px;
-    border-radius: 6px;
+    gap: 10px;
+    font-size: 1rem;
+    color: white;
     font-weight: 600;
 }
 
 .legend-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.chart-container {
+    margin-top: 15px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    max-width: 90%;
+}
+
+#chart, #bobChartSvg, #chart1 {
+    width: 100%;
+    height: auto;
+    max-width: 1200px;
+}
+
+.slide-indicator {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+.dot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    cursor: pointer;
 }
 
-/* Responsive design for the larger chart */
-@media (max-width: 1200px) {
-    .container {
-        max-width: 95%;
-        padding: 20px;
-    }
-    
-    #chart {
-        width: 100%;
-        max-width: 100%;
-    }
+.dot.active {
+    background: white;
+    transform: scale(1.2);
 }
 
 @media (max-width: 768px) {
-    .header h1 {
-        font-size: 2rem;
+    .slide {
+        padding: 15px;
     }
     
-    #bob {
-        font-size: 3rem;
+    .slide h1 { font-size: 2rem; }
+    .slide h2 { font-size: 1.5rem; }
+    .slide h3 { font-size: 1.2rem; }
+    .slide p { font-size: 1rem; }
+    #bob, .control-character { font-size: 4rem; }
+    button { font-size: 0.9rem; padding: 10px 20px; }
+    
+    .chart-container {
+        max-width: 95%;
+        padding: 10px;
     }
     
-    .controls {
+    .legend {
         flex-direction: column;
+        gap: 10px;
         align-items: center;
     }
     
-    button {
-        width: 200px;
+    .comparison-controls {
+        gap: 10px;
+    }
+    
+    select {
+        min-width: 250px;
     }
 }

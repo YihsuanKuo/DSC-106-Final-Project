@@ -8,42 +8,64 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
+    <div class="slides-container">
+        <!-- Slide 1: Meet Bob -->
+        <div class="slide active" id="slide1">
             <h1>🚶‍♂️ Bob's Gait Pattern Analyzer</h1>
-            <p class="instructions">Click on Bob to make him walk, then compare his gait with different medical conditions</p>
-        </div>
-        
-        <div class="bob-section">
-            <h2>👋 Meet Bob</h2>
-            <p class="instructions">Every time you click on Bob, he will take a step. Record his walking pattern!</p>
+            <h2>👋 This is Bob</h2>
+            <p>Meet Bob! He's going to help us understand different walking patterns. Click on Bob to make him take steps, and we'll record his walking pattern for 10 seconds.</p>
             
             <div class="bob-container">
                 <span id="bob">🧍</span>
             </div>
             
             <div class="controls">
-                <button id="startBtn">🎬 Start Recording</button>
-                <button id="replayBtn" style="display: none;">🔁 Replay Bob's Walk</button>
+                <button id="startBtn" class="primary-btn">🎬 Start Recording Bob</button>
+                <button id="replayBtn" class="secondary-btn" style="display: none;">🔁 Replay Bob's Walk</button>
             </div>
             
             <div id="status"></div>
+            
+            <!-- Bob's Chart Container -->
+            <div class="chart-container" id="bobChart" style="display: none;">
+                <h3>Bob's Walking Pattern</h3>
+                <svg id="bobChartSvg" width="800" height="400"></svg>
+            </div>
+            
+            <button id="nextBtn1" class="next-btn" disabled>Next: Meet the Control →</button>
         </div>
-        
-        <div class="comparison-section">
+
+        <!-- Slide 2: Control Character -->
+        <div class="slide" id="slide2">
+            <h2>👤 This is NOT Bob</h2>
+            <p>This person represents our healthy control group. They have a normal, regular walking pattern that we'll use as a baseline for comparison.</p>
+            
+            <div class="control-character">🚶‍♀️</div>
+            
+            <p>Healthy individuals typically show consistent stride intervals with minimal variation. Their walking pattern serves as our reference point for identifying abnormal gait patterns.</p>
+            
+            <div class="chart-container" id="controlChart" style="display: none;">
+                <svg id="chart1" width="800" height="400"></svg>
+            </div>
+            
+            <button id="showControlBtn" class="primary-btn">📊 Show Control Pattern</button>
+            <button id="nextBtn2" class="next-btn" style="display: none;">Next: Compare Patterns →</button>
+        </div>
+
+        <!-- Slide 3: Comparison -->
+        <div class="slide" id="slide3">
             <h2>📊 Compare Gait Patterns</h2>
-            <p class="instructions">Compare Bob's walking pattern with different medical conditions</p>
+            <p>Now let's compare Bob's walking pattern with different medical conditions. Each condition affects walking in unique ways.</p>
             
             <div class="comparison-controls">
-                <label for="personSelect">Compare with:</label>
+                <label for="personSelect">Compare Bob with:</label>
                 <select id="personSelect">
                     <option value="">-- Select a condition --</option>
                 </select>
                 
                 <div class="checkbox-container">
-                    <label for="showLines">
-                        <input type="checkbox" id="showLines"> Show connecting lines
-                    </label>
+                    <input type="checkbox" id="showLines">
+                    <label for="showLines">Show connecting lines</label>
                 </div>
             </div>
             
@@ -57,10 +79,17 @@
                     <span id="comparisonLabel">Comparison</span>
                 </div>
             </div>
+            
+            <div class="chart-container">
+                <svg id="chart" width="1200" height="600"></svg>
+            </div>
         </div>
-        
-        <div class="chart-container">
-            <svg id="chart" width="1400" height="800"></svg>
+
+        <!-- Slide Indicators -->
+        <div class="slide-indicator">
+            <div class="dot active" data-slide="0"></div>
+            <div class="dot" data-slide="1"></div>
+            <div class="dot" data-slide="2"></div>
         </div>
     </div>
 

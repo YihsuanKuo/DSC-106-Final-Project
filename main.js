@@ -1,6 +1,9 @@
 const AVG_STEPS_PER_SEC = 1.5;
 const WALK_DURATION_MS = 10000;
 let bobDots = [];
+let currentSlide = 0;
+let isRecording = false;
+const totalSlides = 3;
 
 // Real data from CSV files - Fixed paths
 const SAMPLE_PEOPLE = [
@@ -10,8 +13,9 @@ const SAMPLE_PEOPLE = [
     { id: 4, name: "Parkinson's", disease: "Parkinson's Disease", file: "new_data/park/park1.csv", color: "#fd7e14" }
 ];
 
-// DOM elements - wait for DOM to be ready
-let bobEl, startBtn, statusEl, svg, personSelect, replayBtn, legend, comparisonLabel, showLinesCheckbox;
+// DOM elements
+let bobEl, startBtn, statusEl, svg, svg1, bobChartSvg, personSelect, replayBtn, legend, comparisonLabel, showLinesCheckbox;
+let nextBtn1, nextBtn2, showControlBtn;
 
 // Initialize DOM elements after page loads
 document.addEventListener('DOMContentLoaded', function() {
@@ -19,33 +23,21 @@ document.addEventListener('DOMContentLoaded', function() {
     startBtn = document.getElementById("startBtn");
     statusEl = document.getElementById("status");
     svg = d3.select("#chart");
+    svg1 = d3.select("#chart1");
+    bobChartSvg = d3.select("#bobChartSvg");
     personSelect = document.getElementById("personSelect");
     replayBtn = document.getElementById("replayBtn");
     legend = document.getElementById("legend");
     comparisonLabel = document.getElementById("comparisonLabel");
     showLinesCheckbox = document.getElementById("showLines");
+    nextBtn1 = document.getElementById("nextBtn1");
+    nextBtn2 = document.getElementById("nextBtn2");
+    showControlBtn = document.getElementById("showControlBtn");
     
-    // Check if all elements are found
-    if (!bobEl || !startBtn || !statusEl || !personSelect || !replayBtn || !legend || !comparisonLabel || !showLinesCheckbox) {
-        console.error('Some DOM elements not found:', {
-            bobEl: !!bobEl,
-            startBtn: !!startBtn,
-            statusEl: !!statusEl,
-            personSelect: !!personSelect,
-            replayBtn: !!replayBtn,
-            legend: !!legend,
-            comparisonLabel: !!comparisonLabel,
-            showLinesCheckbox: !!showLinesCheckbox
-        });
-        return;
-    }
-    
-    // Initialize the app
     initializeApp();
 });
 
 function initializeApp() {
-
     // Populate dropdown
     SAMPLE_PEOPLE.forEach(p => {
         const option = document.createElement("option");
@@ -54,9 +46,7 @@ function initializeApp() {
         personSelect.appendChild(option);
     });
     
-    // Set up event listeners
     setupEventListeners();
-    
     console.log('Gait analyzer initialized');
 }
 
@@ -65,16 +55,23 @@ function setupEventListeners() {
     bobEl.addEventListener("click", (e) => {
         e.preventDefault();
         takeStep();
-        if (startTime) {
+        
+        // Only record steps if we're actively recording
+        if (isRecording && startTime) {
             const now = performance.now();
-            if (now - startTime <= WALK_DURATION_MS) {
-                bobSteps.push(now - startTime);
+            const elapsed = now - startTime;
+            if (elapsed <= WALK_DURATION_MS) {
+                bobSteps.push(elapsed);
+                console.log(`Step recorded at ${elapsed}ms`);
             }
         }
     });
 
     startBtn.addEventListener("click", startWalk);
     replayBtn.addEventListener("click", replaySteps);
+    nextBtn1.addEventListener("click", () => goToSlide(1));
+    nextBtn2.addEventListener("click", () => goToSlide(2));
+    showControlBtn.addEventListener("click", showControlPattern);
 
     personSelect.addEventListener("change", async () => {
         const selectedId = personSelect.value;
@@ -96,6 +93,33 @@ function setupEventListeners() {
             await drawChart(currentComparison);
         }
     });
+
+    // Slide indicators
+    document.querySelectorAll('.dot').forEach((dot, index) => {
+        dot.addEventListener('click', () => goToSlide(index));
+    });
+}
+
+function goToSlide(slideIndex) {
+    if (slideIndex < 0 || slideIndex >= totalSlides) return;
+    
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+    
+    // Update slides
+    slides[currentSlide].classList.remove('active');
+    slides[currentSlide].classList.add('prev');
+    
+    setTimeout(() => {
+        slides[currentSlide].classList.remove('prev');
+        slides[slideIndex].classList.add('active');
+        
+        // Update dots
+        dots[currentSlide].classList.remove('active');
+        dots[slideIndex].classList.add('active');
+        
+        currentSlide = slideIndex;
+    }, 100);
 }
 
 let bobSteps = [], startTime = null, intervalId = null;
@@ -105,12 +129,17 @@ let loadedData = {}; // Cache for loaded CSV data
 function reset() {
     bobSteps = [];
     startTime = null;
+    isRecording = false;
     svg.selectAll("*").remove();
+    bobChartSvg.selectAll("*").remove();
     statusEl.textContent = "";
     replayBtn.style.display = "none";
     legend.style.display = "none";
-    // Reset Bob's position
+    document.getElementById("bobChart").style.display = "none";
     bobEl.style.transform = "translateX(0px)";
+    nextBtn1.disabled = true;
+    startBtn.disabled = false;
+    startBtn.textContent = "🎬 Start Recording Bob";
 }
 
 // Load CSV data with better error handling
@@ -141,7 +170,6 @@ function processCSVToIntervals(csvData) {
     const intervals = [];
     let minTime = Infinity;
     
-    // First pass: find the minimum time to use as offset
     csvData.forEach(row => {
         const elapsedTime = +row['Elapsed Time (sec)'];
         if (!isNaN(elapsedTime) && elapsedTime !== null) {
@@ -149,7 +177,6 @@ function processCSVToIntervals(csvData) {
         }
     });
     
-    // If no valid times found, use 0 as offset
     if (minTime === Infinity) minTime = 0;
     
     csvData.forEach(row => {
@@ -157,37 +184,242 @@ function processCSVToIntervals(csvData) {
         const leftStride = +row['Left Stride Interval (sec)'];
         const rightStride = +row['Right Stride Interval (sec)'];
         
-        // Normalize time by subtracting the minimum time (time offset)
         const normalizedTime = elapsedTime - minTime;
         
-        // Only include data points within our 10-second window and with valid values
         if (normalizedTime <= 10 && normalizedTime >= 0 && 
             !isNaN(leftStride) && !isNaN(rightStride) && 
             leftStride > 0 && rightStride > 0) {
-            // Add both left and right stride intervals with normalized time
             const avgStride = (leftStride + rightStride) / 2;
             intervals.push({ time: normalizedTime, interval: avgStride, type: 'avg' });
         }
     });
     
-    // Sort by time to ensure proper ordering
     return intervals.sort((a, b) => a.time - b.time);
 }
 
-function processStepsToIntervals(steps) {
-    const intervals = [];
-    for (let i = 1; i < steps.length; i++) {
-        const interval = (steps[i] - steps[i - 1]) / 1000;
-        const time = (steps[i] + steps[i - 1]) / 2000;
-        intervals.push({ time, interval });
+// Fixed function to process Bob's steps - now calculates actual stride intervals
+function processStepsToData(steps) {
+    if (steps.length < 2) {
+        // If we have less than 2 steps, we can't calculate intervals
+        return [];
     }
-    return intervals;
+    
+    const stepData = [];
+    
+    // Calculate stride intervals as the difference between consecutive steps
+    for (let i = 1; i < steps.length; i++) {
+        const currentStepTime = steps[i] / 1000; // Convert to seconds
+        const previousStepTime = steps[i - 1] / 1000; // Convert to seconds
+        const strideInterval = currentStepTime - previousStepTime; // Time between steps
+        
+        // Use the current step time as the x-coordinate and stride interval as y-coordinate
+        stepData.push({ 
+            time: currentStepTime, 
+            interval: strideInterval, 
+            type: 'stride' 
+        });
+    }
+    
+    console.log('Processed Bob stride intervals:', stepData);
+    return stepData;
+}
+
+async function showControlPattern() {
+    const controlPerson = SAMPLE_PEOPLE[0]; // First person is control
+    try {
+        const csvData = await loadCSVData(controlPerson);
+        const controlIntervals = processCSVToIntervals(csvData);
+        
+        const controlChart = document.getElementById('controlChart');
+        controlChart.style.display = 'block';
+        
+        drawControlChart(controlIntervals, controlPerson);
+        showControlBtn.style.display = 'none';
+        nextBtn2.style.display = 'inline-block';
+    } catch (error) {
+        console.error('Error loading control data:', error);
+    }
+}
+
+function drawControlChart(intervals, person) {
+    svg1.selectAll("*").remove();
+    
+    const margin = { top: 20, right: 40, bottom: 60, left: 80 },
+        width = 800 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    const x = d3.scaleLinear()
+        .domain([0, 10])
+        .range([0, width]);
+
+    const y = d3.scaleLinear()
+        .domain([0, Math.max(2, d3.max(intervals, d => d.interval))])
+        .range([height, 0]);
+
+    const chart = svg1.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Add axes
+    chart.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x))
+        .append("text")
+        .attr("x", width / 2)
+        .attr("y", 40)
+        .attr("fill", "black")
+        .style("text-anchor", "middle")
+        .style("font-size", "14px")
+        .text("Time (seconds)");
+
+    chart.append("g")
+        .call(d3.axisLeft(y))
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -50)
+        .attr("x", -height / 2)
+        .attr("fill", "black")
+        .style("text-anchor", "middle")
+        .style("font-size", "14px")
+        .text("Stride Interval (seconds)");
+
+    // Plot control data
+    chart.selectAll(".control-dot")
+        .data(intervals)
+        .enter()
+        .append("circle")
+        .attr("class", "control-dot")
+        .attr("cx", d => x(d.time))
+        .attr("cy", d => y(d.interval))
+        .attr("r", 6)
+        .attr("fill", person.color)
+        .attr("opacity", 0.8)
+        .attr("stroke", "white")
+        .attr("stroke-width", 2);
+
+    // Add connecting line
+    const line = d3.line()
+        .x(d => x(d.time))
+        .y(d => y(d.interval))
+        .curve(d3.curveMonotoneX);
+
+    chart.append("path")
+        .datum(intervals)
+        .attr("fill", "none")
+        .attr("stroke", person.color)
+        .attr("stroke-width", 3)
+        .attr("opacity", 0.7)
+        .attr("d", line);
+}
+
+// Updated function to draw Bob's chart on slide 1
+function drawBobChart(stepData) {
+    bobChartSvg.selectAll("*").remove();
+    
+    const margin = { top: 20, right: 40, bottom: 60, left: 80 },
+        width = 800 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    const x = d3.scaleLinear()
+        .domain([0, 10])
+        .range([0, width]);
+
+    // Dynamic y-scale based on actual stride intervals
+    const maxInterval = stepData.length > 0 ? d3.max(stepData, d => d.interval) : 2;
+    const y = d3.scaleLinear()
+        .domain([0, Math.max(2, maxInterval * 1.1)]) // Add 10% padding
+        .range([height, 0]);
+
+    const chart = bobChartSvg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Add grid lines
+    const xGrid = d3.axisBottom(x).tickSize(-height).tickFormat("");
+    const yGrid = d3.axisLeft(y).tickSize(-width).tickFormat("");
+
+    chart.append("g")
+        .attr("class", "grid")
+        .attr("transform", `translate(0,${height})`)
+        .call(xGrid)
+        .style("stroke-dasharray", "3,3")
+        .style("opacity", 0.3);
+
+    chart.append("g")
+        .attr("class", "grid")
+        .call(yGrid)
+        .style("stroke-dasharray", "3,3")
+        .style("opacity", 0.3);
+
+    // Add axes
+    chart.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x).tickSize(8))
+        .style("font-size", "14px")
+        .append("text")
+        .attr("x", width / 2)
+        .attr("y", 40)
+        .attr("fill", "black")
+        .style("text-anchor", "middle")
+        .style("font-size", "16px")
+        .style("font-weight", "600")
+        .text("Time (seconds)");
+
+    chart.append("g")
+        .call(d3.axisLeft(y))
+        .style("font-size", "14px")
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -50)
+        .attr("x", -height / 2)
+        .attr("fill", "black")
+        .style("text-anchor", "middle")
+        .style("font-size", "16px")
+        .style("font-weight", "600")
+        .text("Stride Interval (seconds)");
+
+    // Plot Bob's stride intervals
+    if (stepData.length > 0) {
+        bobDots = chart.selectAll(".bob-dot")
+            .data(stepData)
+            .enter()
+            .append("circle")
+            .attr("class", "bob-dot")
+            .attr("cx", d => x(d.time))
+            .attr("cy", d => y(d.interval))
+            .attr("r", 8)
+            .attr("fill", "#007acc")
+            .attr("opacity", 0.8)
+            .attr("stroke", "white")
+            .attr("stroke-width", 3);
+
+        // Add connecting line for Bob's stride intervals
+        const line = d3.line()
+            .x(d => x(d.time))
+            .y(d => y(d.interval))
+            .curve(d3.curveMonotoneX);
+
+        chart.append("path")
+            .datum(stepData)
+            .attr("fill", "none")
+            .attr("stroke", "#007acc")
+            .attr("stroke-width", 2)
+            .attr("opacity", 0.5)
+            .attr("d", line);
+    } else {
+        // Show message if no stride intervals could be calculated
+        chart.append("text")
+            .attr("x", width / 2)
+            .attr("y", height / 2)
+            .attr("text-anchor", "middle")
+            .attr("fill", "#666")
+            .style("font-size", "16px")
+            .text("Need at least 2 steps to calculate stride intervals");
+    }
 }
 
 async function drawChart(comparisonPerson = null) {
     svg.selectAll("*").remove();
 
-    const bobIntervals = processStepsToIntervals(bobSteps);
+    const bobStepData = processStepsToData(bobSteps);
     let comparisonIntervals = [];
     
     if (comparisonPerson) {
@@ -200,16 +432,15 @@ async function drawChart(comparisonPerson = null) {
         }
     }
 
-    const allData = [...bobIntervals, ...comparisonIntervals];
+    const allData = [...bobStepData, ...comparisonIntervals];
     if (allData.length === 0) {
         console.warn('No data to display in chart');
         return;
     }
 
-    // Chart dimensions
     const margin = { top: 40, right: 60, bottom: 80, left: 100 },
-        width = 1400 - margin.left - margin.right,
-        height = 800 - margin.top - margin.bottom;
+        width = 1200 - margin.left - margin.right,
+        height = 600 - margin.top - margin.bottom;
 
     const x = d3.scaleLinear()
         .domain([0, 10])
@@ -223,13 +454,8 @@ async function drawChart(comparisonPerson = null) {
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Add grid lines
-    const xGrid = d3.axisBottom(x)
-        .tickSize(-height)
-        .tickFormat("");
-
-    const yGrid = d3.axisLeft(y)
-        .tickSize(-width)
-        .tickFormat("");
+    const xGrid = d3.axisBottom(x).tickSize(-height).tickFormat("");
+    const yGrid = d3.axisLeft(y).tickSize(-width).tickFormat("");
 
     chart.append("g")
         .attr("class", "grid")
@@ -271,10 +497,10 @@ async function drawChart(comparisonPerson = null) {
         .style("font-weight", "600")
         .text("Stride Interval (seconds)");
 
-    // Plot Bob's data
-    if (bobIntervals.length > 0) {
-        bobDots = chart.selectAll(".bob-dot")
-            .data(bobIntervals)
+    // Plot Bob's stride intervals
+    if (bobStepData.length > 0) {
+        chart.selectAll(".bob-dot")
+            .data(bobStepData)
             .enter()
             .append("circle")
             .attr("class", "bob-dot")
@@ -287,21 +513,18 @@ async function drawChart(comparisonPerson = null) {
             .attr("stroke-width", 3);
 
         // Add connecting line for Bob's data
-        if (showLinesCheckbox && showLinesCheckbox.checked) {
-            const line = d3.line()
-                .x(d => x(d.time))
-                .y(d => y(d.interval))
-                .curve(d3.curveMonotoneX);
+        const bobLine = d3.line()
+            .x(d => x(d.time))
+            .y(d => y(d.interval))
+            .curve(d3.curveMonotoneX);
 
-            chart.append("path")
-                .datum(bobIntervals)
-                .attr("fill", "none")
-                .attr("stroke", "#007acc")
-                .attr("stroke-width", 2)
-                .attr("opacity", 0.4)
-                .attr("stroke-dasharray", "5,5")
-                .attr("d", line);
-        }
+        chart.append("path")
+            .datum(bobStepData)
+            .attr("fill", "none")
+            .attr("stroke", "#007acc")
+            .attr("stroke-width", 2)
+            .attr("opacity", 0.5)
+            .attr("d", bobLine);
     }
 
     // Plot comparison data
@@ -317,27 +540,8 @@ async function drawChart(comparisonPerson = null) {
             .attr("fill", comparisonPerson.color)
             .attr("opacity", 0.7)
             .attr("stroke", "white")
-            .attr("stroke-width", 2)
-            .on("click", function(event, d) {
-                // Add click functionality for comparison dots
-                const dot = d3.select(this);
-                dot.transition()
-                    .duration(300)
-                    .attr("r", 10)
-                    .attr("opacity", 1);
-                
-                setTimeout(() => {
-                    dot.transition()
-                        .duration(300)
-                        .attr("r", 6)
-                        .attr("opacity", 0.7);
-                }, 600);
-                
-                // Show info about the clicked point
-                statusEl.textContent = `📍 ${comparisonPerson.name}: Time ${d.time.toFixed(2)}s, Interval ${d.interval.toFixed(3)}s`;
-            });
+            .attr("stroke-width", 2);
 
-        // Add connecting line for comparison data
         if (showLinesCheckbox && showLinesCheckbox.checked) {
             const line = d3.line()
                 .x(d => x(d.time))
@@ -354,11 +558,9 @@ async function drawChart(comparisonPerson = null) {
                 .attr("d", line);
         }
 
-        // Show legend
         legend.style.display = "flex";
         comparisonLabel.textContent = `${comparisonPerson.name} (${comparisonPerson.disease})`;
         
-        // Update legend dot color
         const legendDot = document.querySelector('.legend-item:last-child .legend-dot');
         if (legendDot) {
             legendDot.style.backgroundColor = comparisonPerson.color;
@@ -368,17 +570,38 @@ async function drawChart(comparisonPerson = null) {
 
 function startWalk() {
     reset();
+    isRecording = true;
     startTime = performance.now();
+    startBtn.disabled = true;
+    startBtn.textContent = "⏳ Recording...";
     statusEl.textContent = "🚶‍♂️ Make Bob walk for 10 seconds by clicking on him!";
     
+    console.log('Recording started at:', startTime);
+    
     setTimeout(() => {
-        clearInterval(intervalId);
+        isRecording = false;
         statusEl.textContent = `✅ Recording complete! Bob took ${bobSteps.length} steps.`;
-        drawChart(currentComparison);
-        replayBtn.style.display = "inline-block";
+        console.log('Recording ended. Total steps:', bobSteps.length);
+        console.log('Step times:', bobSteps);
         
-        if (currentComparison) {
-            legend.style.display = "flex";
+        if (bobSteps.length > 0) {
+            // Process and show Bob's chart on slide 1
+            const bobStepData = processStepsToData(bobSteps);
+            drawBobChart(bobStepData);
+            document.getElementById("bobChart").style.display = "block";
+            
+            // Also draw comparison chart if needed
+            drawChart(currentComparison);
+            replayBtn.style.display = "inline-block";
+            nextBtn1.disabled = false;
+            
+            if (currentComparison) {
+                legend.style.display = "flex";
+            }
+        } else {
+            statusEl.textContent = "❌ No steps recorded! Try clicking on Bob during the recording period.";
+            startBtn.disabled = false;
+            startBtn.textContent = "🎬 Start Recording Bob";
         }
     }, WALK_DURATION_MS);
 }
@@ -390,7 +613,6 @@ function takeStep() {
     bobEl.style.transform = `translateX(${distance}px)`;
     stepRight = !stepRight;
     
-    // Add a little bounce animation
     bobEl.style.transition = "transform 0.2s ease";
     setTimeout(() => {
         bobEl.style.transition = "transform 0.3s ease";
@@ -403,7 +625,6 @@ function replaySteps() {
     replayBtn.disabled = true;
     replayBtn.textContent = "👣 Bob is replaying...";
     
-    // Reset Bob's position
     bobEl.style.transform = "translateX(0px)";
     stepRight = true;
     
@@ -411,7 +632,6 @@ function replaySteps() {
         setTimeout(() => {
             takeStep();
             
-            // Highlight corresponding dot
             if (bobDots.nodes && bobDots.nodes()[i]) {
                 const dot = d3.select(bobDots.nodes()[i]);
                 dot.transition()
