@@ -211,7 +211,7 @@ select {
 }
 
 .legend {
-    display: flex;
+  display: flex;
     gap: 30px;
     margin: 15px 0;
     padding: 15px;
@@ -224,7 +224,7 @@ select {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 1rem;
+  font-size: 1rem;
     color: white;
     font-weight: 600;
 }
@@ -266,7 +266,7 @@ select {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.3);
     transition: all 0.3s ease;
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .dot.active {
@@ -303,5 +303,126 @@ select {
     
     select {
         min-width: 250px;
+    }
+}
+
+.playground-container {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    margin: 0.5rem auto;
+    max-width: 1400px;
+    min-height: 550px;
+}
+
+.playground-left {
+    flex: 0.8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    min-width: 250px;
+    padding-top: 1rem;
+}
+
+.playground-right {
+    flex: 2.2;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 0;
+    padding-left: 1rem;
+}
+
+.playground-left .bob-container {
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+}
+
+#playgroundBob {
+    font-size: 6rem;
+    cursor: pointer;
+    display: inline-block;
+    transition: transform 0.3s ease;
+    user-select: none;
+    position: relative;
+}
+
+#playgroundBob:hover {
+    transform: scale(1.1);
+}
+
+.playground-right .comparison-controls {
+    margin: 0;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.playground-right .chart-container {
+    flex: 1;
+    min-height: 450px;
+    padding: 1rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+#playgroundChart {
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+}
+
+#slide4 {
+    padding-top: 0.5rem;
+}
+
+#slide4 h2 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+#slide4 p {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+    .playground-container {
+        padding: 1rem;
+        gap: 1rem;
+        margin: 0.25rem auto;
+        min-height: auto;
+        flex-direction: column;
+    }
+
+    .playground-left, .playground-right {
+        width: 100%;
+        padding-left: 0;
+    }
+
+    .playground-left .bob-container {
+        margin-top: 1rem;
+    }
+
+    .playground-right .chart-container {
+        min-height: 350px;
+    }
+
+    #slide4 h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.25rem;
+    }
+
+    #slide4 p {
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
     }
 }

@@ -83,6 +83,47 @@
             <div class="chart-container">
                 <svg id="chart" width="1200" height="600"></svg>
             </div>
+            
+            <button id="nextBtn3" class="next-btn">Next: Try it yourself! →</button>
+        </div>
+
+        <!-- Slide 4: Interactive Playground -->
+        <div class="slide" id="slide4">
+            <h2>🎮 Interactive Playground</h2>
+            <p>Now it's your turn! Make Bob walk again and compare his patterns with previous recordings.</p>
+            
+            <div class="playground-container">
+                <div class="playground-left">
+                    <div class="bob-container">
+                        <span id="playgroundBob">🧍</span>
+                    </div>
+                    
+                    <div class="controls">
+                        <button id="playgroundStartBtn" class="primary-btn">🎬 Start New Recording</button>
+                        <button id="playgroundReplayBtn" class="secondary-btn" style="display: none;">🔁 Replay Walk</button>
+                    </div>
+                    
+                    <div id="playgroundStatus"></div>
+                </div>
+                
+                <div class="playground-right">
+                    <div class="comparison-controls">
+                        <label for="compareSelect">Compare with:</label>
+                        <select id="compareSelect">
+                            <option value="">-- Select a condition --</option>
+                        </select>
+                        
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="playgroundShowLines">
+                            <label for="playgroundShowLines">Show connecting lines</label>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <svg id="playgroundChart" width="100%" height="500" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet"></svg>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Slide Indicators -->
@@ -90,6 +131,7 @@
             <div class="dot active" data-slide="0"></div>
             <div class="dot" data-slide="1"></div>
             <div class="dot" data-slide="2"></div>
+            <div class="dot" data-slide="3"></div>
         </div>
     </div>
 
