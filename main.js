@@ -429,15 +429,6 @@ function drawBobChart(stepData) {
         width = 800 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
-    const replayLine = d3.select("#bobChartSvg")
-        .append("line")
-        .attr("class", "replay-line")
-        .attr("y1", 0)
-        .attr("y2", height) // use your chart height here
-        .attr("stroke", "red")
-        .attr("stroke-width", 2)
-        .attr("opacity", 0);
-
     const x = d3.scaleLinear()
         .domain([0, 10])
         .range([0, width]);
@@ -774,7 +765,6 @@ function takeStep() {
 }
 
 function replaySteps() {
-
     if (bobSteps.length === 0) return;
     
     replayBtn.disabled = true;
