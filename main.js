@@ -13,6 +13,25 @@ const SAMPLE_PEOPLE = [
     { id: 4, name: "Parkinson's", disease: "Parkinson's Disease", file: "new_data/park/park1.csv", color: "#fd7e14" }
 ];
 
+const DISEASE_DESCRIPTIONS = {
+    "Control": {
+        title: "Healthy Control",
+        description: "Healthy individuals typically show consistent stride intervals with minimal variation. Their walking pattern serves as our reference point for identifying abnormal gait patterns."
+    },
+    "ALS": {
+        title: "Amyotrophic Lateral Sclerosis (ALS)",
+        description: "ALS affects motor neurons, leading to muscle weakness and progressive difficulty with movement. Gait patterns often show irregular stride intervals and reduced walking speed as the disease progresses."
+    },
+    "Huntington's": {
+        title: "Huntington's Disease",
+        description: "Huntington's disease causes involuntary movements and affects coordination. Walking patterns typically show irregular, jerky movements with highly variable stride intervals and difficulty maintaining steady pace."
+    },
+    "Parkinson's": {
+        title: "Parkinson's Disease",
+        description: "Parkinson's disease affects movement control, often causing shuffling gait, reduced stride length, and freezing episodes. Stride intervals may show patterns of hesitation or sudden changes in timing."
+    }
+};
+
 // DOM elements
 let bobEl, startBtn, statusEl, svg, svg1, bobChartSvg, personSelect, replayBtn, legend, comparisonLabel, showLinesCheckbox;
 let nextBtn1, nextBtn2, nextBtn3, showControlBtn;
@@ -89,6 +108,27 @@ function initializeApp() {
     console.log('Gait analyzer initialized');
     initializePlayground();
 }
+function showDiseaseDescription(personName, isPlayground = false) {
+    const description = DISEASE_DESCRIPTIONS[personName];
+    if (!description) return;
+
+    const descriptionDiv = document.getElementById('diseaseDescription');
+    const titleElement = document.getElementById('diseaseTitle');
+    const textElement = document.getElementById('diseaseText');
+
+    if (descriptionDiv && titleElement && textElement) {
+        titleElement.textContent = description.title;
+        textElement.textContent = description.description;
+        descriptionDiv.style.display = 'block';
+    }
+}
+
+function hideDiseaseDescription(isPlayground = false) {
+    const descriptionDiv = document.getElementById('diseaseDescription');
+    if (descriptionDiv) {
+        descriptionDiv.style.display = 'none';
+    }
+}
 
 function setupEventListeners() {
     // Bob click handler
@@ -119,9 +159,11 @@ function setupEventListeners() {
         if (selectedId) {
             currentComparison = SAMPLE_PEOPLE.find(p => p.id == selectedId);
             console.log('Selected comparison:', currentComparison);
+            showDiseaseDescription(currentComparison.name); // Add this line
         } else {
             currentComparison = null;
             legend.style.display = "none";
+            hideDiseaseDescription(); // Add this line
         }
         
         if (bobSteps.length > 0) {
@@ -902,9 +944,11 @@ function initializePlayground() {
             if (selectedId) {
                 currentComparison = SAMPLE_PEOPLE.find(p => p.id == selectedId);
                 console.log('Selected comparison:', currentComparison);
+                showDiseaseDescription(currentComparison.name, true); // Add this line
             } else {
                 currentComparison = null;
                 legend.style.display = "none";
+                hideDiseaseDescription(true); // Add this line
             }
             
             // Use the same chart drawing function from slide 3
