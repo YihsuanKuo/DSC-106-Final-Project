@@ -6,7 +6,7 @@ const svg = d3.select("svg"),
 const g = svg.append("g"); // Group for zooming
 
 // load data o1-76-si.txt
-d3.text("../data/o1-76-si.txt").then(rawText => {
+d3.text("../old_data/o1-76-si.txt").then(rawText => {
     const data = rawText
     .trim()
     .split("\n")
