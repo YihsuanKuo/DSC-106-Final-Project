@@ -748,11 +748,15 @@ function startWalk() {
             if (currentComparison) {
                 legend.style.display = "flex";
             }
+            startBtn.textContent = "🎬 Record again";
+            startBtn.disabled = false;
         } else {
             statusEl.textContent = "❌ No steps recorded! Try clicking on Bob during the recording period.";
             startBtn.disabled = false;
             startBtn.textContent = "🎬 Start Recording Bob";
         }
+        // change next button text
+        document.getElementById("nextBtn1").textContent = "See Normal Walk➡️";
     }, WALK_DURATION_MS);
 }
 
