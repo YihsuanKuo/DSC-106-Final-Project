@@ -504,19 +504,12 @@ function drawBobChart(stepData) {
         // Store the dots selection for animation
         bobDots = dots;
 
-        // Add connecting line for Bob's stride intervals
-        const line = d3.line()
-            .x(d => x(d.time))
-            .y(d => y(d.interval))
-            .curve(d3.curveMonotoneX);
-
         chart.append("path")
             .datum(stepData)
             .attr("fill", "none")
             .attr("stroke", "#007acc")
             .attr("stroke-width", 2)
             .attr("opacity", 0.5)
-            .attr("d", line);
     } else {
         // Show message if no stride intervals could be calculated
         chart.append("text")
