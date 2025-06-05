@@ -7,10 +7,10 @@ const totalSlides = 4;
 
 // Real data from CSV files - Fixed paths
 const SAMPLE_PEOPLE = [
-    { id: 1, name: "Control", disease: "Healthy Control", file: "new_data/control/control1.csv", color: "#28a745" },
-    { id: 2, name: "ALS", disease: "ALS", file: "new_data/als/als1.csv", color: "#dc3545" },
-    { id: 3, name: "Huntington's", disease: "Huntington's Disease", file: "new_data/hunt/hunt1.csv", color: "#6f42c1" },
-    { id: 4, name: "Parkinson's", disease: "Parkinson's Disease", file: "new_data/park/park1.csv", color: "#fd7e14" }
+    { id: 1, name: "Control", disease: "Healthy Control", file: "data/control.csv", color: "#28a745" },
+    { id: 2, name: "ALS", disease: "ALS", file: "data/als.csv", color: "#dc3545" },
+    { id: 3, name: "Huntington's", disease: "Huntington's Disease", file: "data/hunt.csv", color: "#6f42c1" },
+    { id: 4, name: "Parkinson's", disease: "Parkinson's Disease", file: "data/park.csv", color: "#fd7e14" }
 ];
 
 const DISEASE_DESCRIPTIONS = {
@@ -271,42 +271,6 @@ async function loadCSVData(person) {
     }
 }
 
-function processCSVToIntervals(csvData) {
-    if (!csvData || csvData.length === 0) {
-        console.warn('No CSV data to process');
-        return [];
-    }
-    
-    const intervals = [];
-    let minTime = Infinity;
-    
-    csvData.forEach(row => {
-        const elapsedTime = +row['Elapsed Time (sec)'];
-        if (!isNaN(elapsedTime) && elapsedTime !== null) {
-            minTime = Math.min(minTime, elapsedTime);
-        }
-    });
-    
-    if (minTime === Infinity) minTime = 0;
-    
-    csvData.forEach(row => {
-        const elapsedTime = +row['Elapsed Time (sec)'];
-        const leftStride = +row['Left Stride Interval (sec)'];
-        const rightStride = +row['Right Stride Interval (sec)'];
-        
-        const normalizedTime = elapsedTime - minTime;
-        
-        if (normalizedTime <= 10 && normalizedTime >= 0 && 
-            !isNaN(leftStride) && !isNaN(rightStride) && 
-            leftStride > 0 && rightStride > 0) {
-            const avgStride = (leftStride + rightStride) / 2;
-            intervals.push({ time: normalizedTime, interval: avgStride, type: 'avg' });
-        }
-    });
-    
-    return intervals.sort((a, b) => a.time - b.time);
-}
-
 // Fixed function to process Bob's steps - now calculates actual stride intervals
 function processStepsToData(steps) {
     if (steps.length < 2) {
@@ -337,13 +301,14 @@ function processStepsToData(steps) {
 async function showControlPattern() {
     const controlPerson = SAMPLE_PEOPLE[0]; // First person is control
     try {
-        const csvData = await loadCSVData(controlPerson);
-        const controlIntervals = processCSVToIntervals(csvData);
-        
+        const controlIntervals = await loadCSVData(controlPerson);
+        testIntervals = controlIntervals.slice(0, 10); // Limit to first 10 intervals for performance
         const controlChart = document.getElementById('controlChart');
         controlChart.style.display = 'block';
+
+        console.log('testIntervals:', testIntervals);
         
-        drawControlChart(controlIntervals, controlPerson);
+        drawControlChart(testIntervals, controlPerson);
         showControlBtn.style.display = 'none';
         if (nextBtn2) nextBtn2.style.display = 'inline-block';
     } catch (error) {
@@ -535,8 +500,7 @@ async function drawChart(comparisonData = null, targetSvg = null, showLines = fa
     
     if (comparisonData) {
         try {
-            const csvData = await loadCSVData(comparisonData);
-            comparisonIntervals = processCSVToIntervals(csvData);
+            comparisonIntervals = await loadCSVData(comparisonData);
             console.log(`Processed ${comparisonIntervals.length} intervals for ${comparisonData.name}`);
         } catch (error) {
             console.error('Error loading comparison data:', error);
@@ -676,7 +640,7 @@ async function drawChart(comparisonData = null, targetSvg = null, showLines = fa
             .attr("class", "comparison-dot")
             .attr("cx", d => x(d.time))
             .attr("cy", d => y(d.interval))
-            .attr("r", 5)
+            .attr("r", 6)
             .attr("fill", comparisonData.color)
             .attr("opacity", 0.7)
             .attr("stroke", "white")
