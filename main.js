@@ -377,7 +377,6 @@ function drawControlChart(intervals, person) {
         .attr("stroke", person.color)
         .attr("stroke-width", 3)
         .attr("opacity", 0.7)
-        .attr("d", line);
 }
 
 // Updated function to draw Bob's chart on slide 1
