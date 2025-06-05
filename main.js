@@ -371,12 +371,6 @@ function drawControlChart(intervals, person) {
         .attr("stroke", "white")
         .attr("stroke-width", 2);
 
-    // Connecting line
-    const line = d3.line()
-        .x(d => x(d.time))
-        .y(d => y(d.interval))
-        .curve(d3.curveMonotoneX);
-
     chart.append("path")
         .datum(intervals)
         .attr("fill", "none")
