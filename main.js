@@ -302,13 +302,10 @@ async function showControlPattern() {
     const controlPerson = SAMPLE_PEOPLE[0]; // First person is control
     try {
         const controlIntervals = await loadCSVData(controlPerson);
-        testIntervals = controlIntervals.slice(0, 10); // Limit to first 10 intervals for performance
         const controlChart = document.getElementById('controlChart');
         controlChart.style.display = 'block';
-
-        console.log('testIntervals:', testIntervals);
         
-        drawControlChart(testIntervals, controlPerson);
+        drawControlChart(controlIntervals, controlPerson);
         showControlBtn.style.display = 'none';
         if (nextBtn2) nextBtn2.style.display = 'inline-block';
     } catch (error) {
@@ -318,23 +315,25 @@ async function showControlPattern() {
 
 function drawControlChart(intervals, person) {
     svg1.selectAll("*").remove();
-    
+
     const margin = { top: 20, right: 40, bottom: 60, left: 80 },
         width = 800 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
+    // x-axis: based on full time range in data
     const x = d3.scaleLinear()
-        .domain([0, 10])
+        .domain([0, d3.max(intervals, d => d.time)])
         .range([0, width]);
 
+    // y-axis: stride intervals in seconds
     const y = d3.scaleLinear()
-        .domain([0, Math.max(2, d3.max(intervals, d => d.interval))])
+        .domain([0, d3.max(intervals, d => d.interval)])
         .range([height, 0]);
 
     const chart = svg1.append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Add axes
+    // x-axis with label
     chart.append("g")
         .attr("transform", `translate(0,${height})`)
         .call(d3.axisBottom(x))
@@ -346,6 +345,7 @@ function drawControlChart(intervals, person) {
         .style("font-size", "14px")
         .text("Time (seconds)");
 
+    // y-axis with label
     chart.append("g")
         .call(d3.axisLeft(y))
         .append("text")
@@ -355,9 +355,9 @@ function drawControlChart(intervals, person) {
         .attr("fill", "black")
         .style("text-anchor", "middle")
         .style("font-size", "14px")
-        .text("Stride Interval (seconds)");
+        .text("Stride Interval (s)");
 
-    // Plot control data
+    // Data points
     chart.selectAll(".control-dot")
         .data(intervals)
         .enter()
@@ -371,7 +371,7 @@ function drawControlChart(intervals, person) {
         .attr("stroke", "white")
         .attr("stroke-width", 2);
 
-    // Add connecting line
+    // Connecting line
     const line = d3.line()
         .x(d => x(d.time))
         .y(d => y(d.interval))
@@ -384,7 +384,7 @@ function drawControlChart(intervals, person) {
         .attr("stroke-width", 3)
         .attr("opacity", 0.7)
         .attr("d", line);
-    }
+}
 
 // Updated function to draw Bob's chart on slide 1
 function drawBobChart(stepData) {
