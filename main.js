@@ -300,34 +300,31 @@ function processStepsToData(steps) {
 
 async function showControlPattern() {
     const controlPerson = SAMPLE_PEOPLE[0]; // First person is control
-    try {
-        const controlIntervals = await loadCSVData(controlPerson);
-        const controlChart = document.getElementById('controlChart');
-        controlChart.style.display = 'block';
-        
-        drawControlChart(controlIntervals, controlPerson);
-        showControlBtn.style.display = 'none';
-        if (nextBtn2) nextBtn2.style.display = 'inline-block';
-    } catch (error) {
-        console.error('Error loading control data:', error);
-    }
+    const controlIntervals = await loadCSVData(controlPerson);
+    const controlChart = document.getElementById('controlChart');
+    controlChart.style.display = 'block';
+    showControlBtn.style.display = 'none';
+    if (nextBtn2) nextBtn2.style.display = 'inline-block';
+    drawLongChart(controlIntervals, controlPerson, svg1);
+    drawZoomChart(controlIntervals, controlPerson, d3.select('#zoomChart1'), 0);
 }
 
-function drawControlChart(intervals, person) {
-    svg1.selectAll("*").remove();
+function drawLongChart(intervals, person, svg) {
+    svg.selectAll("*").remove();
 
     const margin = { top: 20, right: 40, bottom: 60, left: 80 },
         width = 800 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
     // x-axis: based on full time range in data
+    console.log([0, intervals[intervals.length - 1]?.time])
     const x = d3.scaleLinear()
-        .domain([0, d3.max(intervals, d => d.time)])
+        .domain([0, intervals[intervals.length - 1]?.time])
         .range([0, width]);
 
     // y-axis: stride intervals in seconds
     const y = d3.scaleLinear()
-        .domain([0, d3.max(intervals, d => d.interval)])
+        .domain([d3.min(intervals,d => d.interval) - 0.05, d3.max(intervals, d => d.interval)])
         .range([height, 0]);
 
     const chart = svg1.append("g")
@@ -377,6 +374,82 @@ function drawControlChart(intervals, person) {
         .attr("stroke", person.color)
         .attr("stroke-width", 3)
         .attr("opacity", 0.7)
+}
+
+function drawZoomChart(intervals, person, svg, startTime = 0) {
+    svg.selectAll("*").remove();
+
+    const margin = { top: 20, right: 40, bottom: 60, left: 80 },
+        width = 800 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    // Filter to only include intervals within the 10-second window
+    const endTime = startTime + 10;
+    const zoomedData = intervals.filter(d => d.time >= startTime && d.time <= endTime);
+
+    const x = d3.scaleLinear()
+        .domain([startTime, endTime])
+        .range([0, width]);
+
+    const y = d3.scaleLinear()
+        .domain([
+            d3.min(zoomedData, d => d.interval) - 0.05,
+            d3.max(zoomedData, d => d.interval)
+        ])
+        .range([height, 0]);
+
+    const chart = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // x-axis with label
+    chart.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x))
+        .append("text")
+        .attr("x", width / 2)
+        .attr("y", 40)
+        .attr("fill", "black")
+        .style("text-anchor", "middle")
+        .style("font-size", "14px")
+        .text(`Time (seconds) [${startTime}–${endTime}]`);
+
+    // y-axis with label
+    chart.append("g")
+        .call(d3.axisLeft(y))
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -50)
+        .attr("x", -height / 2)
+        .attr("fill", "black")
+        .style("text-anchor", "middle")
+        .style("font-size", "14px")
+        .text("Stride Interval (s)");
+
+    // Data points
+    chart.selectAll(".zoom-dot")
+        .data(zoomedData)
+        .enter()
+        .append("circle")
+        .attr("class", "zoom-dot")
+        .attr("cx", d => x(d.time))
+        .attr("cy", d => y(d.interval))
+        .attr("r", 6)
+        .attr("fill", person.color)
+        .attr("opacity", 0.8)
+        .attr("stroke", "white")
+        .attr("stroke-width", 2);
+
+    // Line path
+    chart.append("path")
+        .datum(zoomedData)
+        .attr("fill", "none")
+        .attr("stroke", person.color)
+        .attr("stroke-width", 3)
+        .attr("opacity", 0.7)
+        .attr("d", d3.line()
+            .x(d => x(d.time))
+            .y(d => y(d.interval))
+        );
 }
 
 // Updated function to draw Bob's chart on slide 1
