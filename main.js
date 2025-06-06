@@ -1,6 +1,7 @@
 const AVG_STEPS_PER_SEC = 1.5;
 const WALK_DURATION_MS = 10000;
 let bobDots = [];
+let currentZoomData = [];
 let currentSlide = 0;
 let isRecording = false;
 const totalSlides = 4;
@@ -84,6 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
     bobChartSvg = d3.select("#bobChartSvg");
     personSelect = document.getElementById("personSelect");
     replayBtn = document.getElementById("replayBtn");
+    controlReplayBtn = document.getElementById("controlReplayBtn");
     legend = document.getElementById("legend");
     comparisonLabel = document.getElementById("comparisonLabel");
     showLinesCheckbox = document.getElementById("showLines");
@@ -149,6 +151,8 @@ function setupEventListeners() {
 
     startBtn.addEventListener("click", startWalk);
     replayBtn.addEventListener("click", replaySteps);
+    controlReplayBtn.addEventListener("click", console.log("Control replay clicked"));
+    controlReplayBtn.addEventListener("click", replayZoomSteps(currentZoomData, d3.select('#zoomChart1')));
     if (nextBtn1) nextBtn1.addEventListener('click', () => goToSlide(1));
     if (nextBtn2) nextBtn2.addEventListener('click', () => goToSlide(2));
     if (nextBtn3) nextBtn3.addEventListener('click', () => goToSlide(3));
@@ -299,7 +303,7 @@ function processStepsToData(steps) {
 }
 
 async function showControlPattern() {
-    const controlPerson = SAMPLE_PEOPLE[0]; // First person is control
+    const controlPerson = SAMPLE_PEOPLE[3]; // First person is control
     const controlIntervals = await loadCSVData(controlPerson);
     const controlChart = document.getElementById('controlChart');
     controlChart.style.display = 'block';
@@ -314,7 +318,7 @@ function drawLongChart(intervals, person, svg) {
 
     const margin = { top: 20, right: 40, bottom: 60, left: 80 },
         width = 800 - margin.left - margin.right,
-        height = 400 - margin.top - margin.bottom;
+        height = 200 - margin.top - margin.bottom;
 
     // x-axis: based on full time range in data
     console.log([0, intervals[intervals.length - 1]?.time])
@@ -368,12 +372,20 @@ function drawLongChart(intervals, person, svg) {
         .attr("stroke", "white")
         .attr("stroke-width", 2);
 
-    chart.append("path")
-        .datum(intervals)
-        .attr("fill", "none")
-        .attr("stroke", person.color)
-        .attr("stroke-width", 3)
-        .attr("opacity", 0.7)
+    // --- BRUSH for zoom selection ---
+    const brush = d3.brushX()
+        .extent([[0, 0], [width, height]])
+        .on("brush end", ({ selection }) => {
+            if (selection) {
+                const [x0, x1] = selection.map(x.invert);
+                drawZoomChart(intervals, person, d3.select('#zoomChart1'), x0, x1);
+            }
+        });
+
+    chart.append("g")
+        .attr("class", "brush")
+        .call(brush)
+        .call(brush.move, [0, 10].map(x));  // Initial 10s window
 }
 
 function drawZoomChart(intervals, person, svg, startTime = 0) {
@@ -386,6 +398,7 @@ function drawZoomChart(intervals, person, svg, startTime = 0) {
     // Filter to only include intervals within the 10-second window
     const endTime = startTime + 10;
     const zoomedData = intervals.filter(d => d.time >= startTime && d.time <= endTime);
+    currentZoomData = zoomedData; // <== store for replay
 
     const x = d3.scaleLinear()
         .domain([startTime, endTime])
@@ -393,8 +406,8 @@ function drawZoomChart(intervals, person, svg, startTime = 0) {
 
     const y = d3.scaleLinear()
         .domain([
-            d3.min(zoomedData, d => d.interval) - 0.05,
-            d3.max(zoomedData, d => d.interval)
+            0,
+            Math.max(2, d3.max(zoomedData, d => d.interval) * 1.1)
         ])
         .range([height, 0]);
 
@@ -411,7 +424,7 @@ function drawZoomChart(intervals, person, svg, startTime = 0) {
         .attr("fill", "black")
         .style("text-anchor", "middle")
         .style("font-size", "14px")
-        .text(`Time (seconds) [${startTime}–${endTime}]`);
+        .text('Time (seconds)');
 
     // y-axis with label
     chart.append("g")
@@ -438,18 +451,31 @@ function drawZoomChart(intervals, person, svg, startTime = 0) {
         .attr("opacity", 0.8)
         .attr("stroke", "white")
         .attr("stroke-width", 2);
+}
 
-    // Line path
-    chart.append("path")
-        .datum(zoomedData)
-        .attr("fill", "none")
-        .attr("stroke", person.color)
-        .attr("stroke-width", 3)
-        .attr("opacity", 0.7)
-        .attr("d", d3.line()
-            .x(d => x(d.time))
-            .y(d => y(d.interval))
-        );
+function replayZoomSteps(zoomData, svgZoom) {
+    console.log('Replaying zoom steps:', zoomData);
+    const dots = svgZoom.selectAll(".zoom-dot");
+    if (zoomData.length === 0 || dots.empty()) return;
+
+    const sortedData = [...zoomData].sort((a, b) => a.time - b.time);
+    const baseTime = sortedData[0].time;
+
+    sortedData.forEach((step, i) => {
+        const delay = (step.time - baseTime) * 1000;
+        setTimeout(() => {
+
+            const dot = d3.select(dots.nodes()[i]);
+            dot.transition().duration(300)
+                .attr("r", 12)
+                .attr("fill", "#ff6b6b")
+                .attr("opacity", 1)
+                .transition().duration(300)
+                .attr("r", 6)
+                .attr("fill", "#007acc")
+                .attr("opacity", 0.8);
+        }, delay);
+    });
 }
 
 // Updated function to draw Bob's chart on slide 1

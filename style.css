@@ -247,7 +247,6 @@ select {
 
 #chart, #bobChartSvg, #chart1 {
     width: 100%;
-    height: auto;
     max-width: 1200px;
 }
 
