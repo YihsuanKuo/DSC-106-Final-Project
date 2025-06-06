@@ -136,7 +136,7 @@ function setupEventListeners() {
     // Bob click handler
     bobEl.addEventListener("click", (e) => {
         e.preventDefault();
-        takeStep();
+        takeStep(bobEl);
         
         // Only record steps if we're actively recording
         if (isRecording && startTime) {
@@ -151,8 +151,24 @@ function setupEventListeners() {
 
     startBtn.addEventListener("click", startWalk);
     replayBtn.addEventListener("click", replaySteps);
-    controlReplayBtn.addEventListener("click", console.log("Control replay clicked"));
-    controlReplayBtn.addEventListener("click", replayZoomSteps(currentZoomData, d3.select('#zoomChart1')));
+    controlReplayBtn.addEventListener("click", async () => {
+        console.log("Control replay clicked");
+
+        const svgZoom = d3.select('#zoomChart1');
+        const timer2 = document.getElementById("timer2");
+
+        controlReplayBtn.disabled = true;
+        controlReplayBtn.textContent = "⏳ Replaying...";
+
+        if (timer2) startTimer(timer2); // 👈 start the timer
+
+        await replayZoomSteps(currentZoomData, svgZoom);
+
+        controlReplayBtn.disabled = false;
+        controlReplayBtn.textContent = "▶️ Play NOT Bob's Walk";
+
+        if (timer2) timer2.style.display = 'none'; // 👈 hide after replay
+    });
     if (nextBtn1) nextBtn1.addEventListener('click', () => goToSlide(1));
     if (nextBtn2) nextBtn2.addEventListener('click', () => goToSlide(2));
     if (nextBtn3) nextBtn3.addEventListener('click', () => goToSlide(3));
@@ -303,7 +319,7 @@ function processStepsToData(steps) {
 }
 
 async function showControlPattern() {
-    const controlPerson = SAMPLE_PEOPLE[3]; // First person is control
+    const controlPerson = SAMPLE_PEOPLE[0]; // First person is control
     const controlIntervals = await loadCSVData(controlPerson);
     const controlChart = document.getElementById('controlChart');
     controlChart.style.display = 'block';
@@ -454,29 +470,42 @@ function drawZoomChart(intervals, person, svg, startTime = 0) {
 }
 
 function replayZoomSteps(zoomData, svgZoom) {
-    console.log('Replaying zoom steps:', zoomData);
     const dots = svgZoom.selectAll(".zoom-dot");
-    if (zoomData.length === 0 || dots.empty()) return;
+    const controlChar = document.getElementById("controlCharacter");
+    if (zoomData.length === 0 || dots.empty() || !controlChar) return;
 
     const sortedData = [...zoomData].sort((a, b) => a.time - b.time);
     const baseTime = sortedData[0].time;
 
+    let stepRight = true;
+    const stepDistance = 20;
+
     sortedData.forEach((step, i) => {
         const delay = (step.time - baseTime) * 1000;
         setTimeout(() => {
-
+            // Animate the dot
             const dot = d3.select(dots.nodes()[i]);
-            dot.transition().duration(300)
+            dot.transition()
+                .duration(300)
                 .attr("r", 12)
                 .attr("fill", "#ff6b6b")
                 .attr("opacity", 1)
-                .transition().duration(300)
+                .transition()
+                .duration(300)
                 .attr("r", 6)
-                .attr("fill", "#007acc")
+                .attr("fill", "#28a745")
                 .attr("opacity", 0.8);
+
+            takeStep(controlChar);
+
+            // Reset to center after short delay
         }, delay);
     });
+
+    const totalTime = (sortedData[sortedData.length - 1].time - baseTime) * 1000 + 500;
+    return new Promise(resolve => setTimeout(resolve, totalTime));
 }
+
 
 // Updated function to draw Bob's chart on slide 1
 function drawBobChart(stepData) {
@@ -809,14 +838,14 @@ function startWalk() {
 
 let stepRight = true;
 
-function takeStep() {
+function takeStep(element) {
     const distance = stepRight ? 20 : -20;
-    bobEl.style.transform = `translateX(${distance}px)`;
+    element.style.transform = `translateX(${distance}px)`;
     stepRight = !stepRight;
-    
-    bobEl.style.transition = "transform 0.2s ease";
+
+    element.style.transition = "transform 0.2s ease";
     setTimeout(() => {
-        bobEl.style.transition = "transform 0.3s ease";
+        element.style.transition = "transform 0.3s ease";
     }, 200);
 }
 
@@ -836,7 +865,7 @@ function replaySteps() {
     
     bobSteps.forEach((stepTime, i) => {
         setTimeout(() => {
-            takeStep();
+            takeStep(bobEl);
 
             // Function to animate a dot
             const animateDot = (dot) => {
