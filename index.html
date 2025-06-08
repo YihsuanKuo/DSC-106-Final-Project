@@ -77,10 +77,10 @@
             <div class="dataset-intro">
                 <h3>🧠 About the Gait Dataset</h3>
                 <p>
-                    The walking patterns you’re exploring come from the <strong>Gait in Neurodegenerative Disease Database</strong>, created by <em>Jeffrey Hausdorff</em> and colleagues.
+                    The walking patterns you're exploring come from the <strong>Gait in Neurodegenerative Disease Database</strong>, created by <em>Jeffrey Hausdorff</em> and colleagues.
                 </p>
                 <ul>
-                    <li><strong>Participants:</strong> 15 with Parkinson’s, 20 with Huntington’s, 13 with ALS, and 16 healthy controls.</li>
+                    <li><strong>Participants:</strong> 15 with Parkinson's, 20 with Huntington's, 13 with ALS, and 16 healthy controls.</li>
                     <li><strong>Measurements:</strong> Stride intervals, swing and stance times, and double support time—captured for both feet using pressure sensors.</li>
                     <li><strong>Purpose:</strong> Identify how each disease uniquely alters walking patterns to help with diagnosis and monitoring.</li>
                     <li><strong>Link:</strong> <a href="https://physionet.org/content/gaitndd/1.0.0/" target="_blank" rel="noopener noreferrer">https://physionet.org/content/gaitndd/1.0.0/</a></li>
@@ -136,7 +136,7 @@
             </div>
         </div>
 
-        <!-- Slide 4: Interactive Playground, where we have three people that are able to simulate the walk and the drop -->
+        <!-- Slide 4: Interactive Playground -->
         <div class="slide" id="slide4">
             <h2>🚶‍♀️🚶‍♂️🚶 Compare Three Gait Patterns</h2>
             <p>Select two conditions to compare with Bob's recorded walk.</p>
@@ -198,6 +198,168 @@
                 <svg id="multiZoomChart" width="800" height="400"></svg>
                 <div id="timer4" class="timer"></div>
             </div>
+
+            <div class="navigation-buttons">
+                <button class="prev-btn">← Previous</button>
+                <button id="nextBtn4" class="next-btn">Next: Why Gait Matters →</button>
+            </div>
+        </div>
+
+        <!-- Slide 5: Why Gait Analysis Matters -->
+        <div class="slide" id="slide5">
+            <h1>🏥 Why Gait Analysis Matters in Healthcare</h1>
+            <p>Discover how the simple act of walking can revolutionize medical diagnosis, treatment, and prevention</p>
+            
+            <div class="dataset-intro">
+                <h2>The Power of Walking Data</h2>
+                <p>Every step you take contains a wealth of medical information. Gait analysis can detect diseases years before symptoms appear, monitor treatment effectiveness in real-time, and prevent life-threatening falls.</p>
+                <p>Join us on a journey through the medical applications that are transforming healthcare through movement analysis.</p>
+            </div>
+            
+            <div class="navigation-buttons">
+                <button class="prev-btn">← Previous</button>
+                <button id="nextBtn5" class="next-btn">Next: Medical Applications →</button>
+            </div>
+        </div>
+
+        <!-- Slide 6: Medical Applications -->
+        <div class="slide" id="slide6">
+            <h2>🔬 Key Medical Applications</h2>
+            <p>Three critical ways gait analysis is transforming patient care</p>
+            
+            <div class="impact-grid">
+                <div class="impact-card" onclick="showApplication('detection')">
+                    <span class="impact-icon">🔍</span>
+                    <div class="impact-title">Early Disease Detection</div>
+                    <div class="impact-description">
+                        Detect neurological conditions like Parkinson's and ALS years before traditional symptoms appear
+                    </div>
+                </div>
+                
+                <div class="impact-card" onclick="showApplication('monitoring')">
+                    <span class="impact-icon">📈</span>
+                    <div class="impact-title">Treatment Monitoring</div>
+                    <div class="impact-description">
+                        Track medication effectiveness and therapy progress with objective, real-time data
+                    </div>
+                </div>
+                
+                <div class="impact-card" onclick="showApplication('prevention')">
+                    <span class="impact-icon">🛡️</span>
+                    <div class="impact-title">Fall Prevention</div>
+                    <div class="impact-description">
+                        Identify high-risk patients and prevent injuries before they occur
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navigation-buttons">
+                <button class="prev-btn">← Back</button>
+                <button id = "nextBtn6" class="next-btn">Next: Potential Patient Story →</button>
+            </div>
+        </div>
+
+        <!-- Slide 7: Patient Journey -->
+        <div class="slide" id="slide7">
+            <h2>👩‍⚕️ Patient Journey: Early Detection Success</h2>
+            <p>Follow Eric's story: How gait analysis changed his life</p>
+            
+            <div class="patient-journey">
+                <div class="timeline" id="timeline">
+                    <div class="timeline-item" data-stage="0">
+                        <div class="timeline-number">1</div>
+                        <div class="timeline-content">
+                            <div class="timeline-stage">Routine Checkup</div>
+                            <div class="timeline-description">Eric, 65, visits for annual physical. Walks normally, feels fine.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item" data-stage="1">
+                        <div class="timeline-number">2</div>
+                        <div class="timeline-content">
+                            <div class="timeline-stage">Gait Analysis Detection</div>
+                            <div class="timeline-description">AI detects subtle movement patterns indicating early neurological changes.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item" data-stage="2">
+                        <div class="timeline-number">3</div>
+                        <div class="timeline-content">
+                            <div class="timeline-stage">Medical Confirmation</div>
+                            <div class="timeline-description">Additional tests confirm early-stage condition. Treatment begins immediately.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item" data-stage="3">
+                        <div class="timeline-number">4</div>
+                        <div class="timeline-content">
+                            <div class="timeline-stage">Continuous Monitoring</div>
+                            <div class="timeline-description">Daily gait tracking optimizes medication timing and dosage.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item" data-stage="4">
+                        <div class="timeline-number">5</div>
+                        <div class="timeline-content">
+                            <div class="timeline-stage">Successful Outcome</div>
+                            <div class="timeline-description">Eric maintains independence and quality of life through early intervention.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="primary-btn" onclick="playJourney()" id="playBtn">▶️ Play Journey</button>
+                <button class="secondary-btn" onclick="resetJourney()">🔄 Reset</button>
+            </div>
+
+            <div class="navigation-buttons">
+                <button class="prev-btn">← Back</button>
+                <button id ="nextBtn7" class="next-btn">Future Applications →</button>
+            </div>
+        </div>
+
+        <!-- Slide 8: Future of Medical Gait Analysis -->
+        <div class="slide" id="slide8">
+            <h2>🚀 The Future of Medical Gait Analysis</h2>
+            <p>Emerging applications that will transform healthcare</p>
+            
+            <div class="impact-grid">
+                <div class="impact-card">
+                    <span class="impact-icon">🏠</span>
+                    <div class="impact-title">Home Monitoring</div>
+                    <div class="impact-description">
+                        Smart homes with embedded sensors provide 24/7 health monitoring through natural walking patterns
+                    </div>
+                </div>
+                
+                <div class="impact-card">
+                    <span class="impact-icon">🧠</span>
+                    <div class="impact-title">Mental Health Detection</div>
+                    <div class="impact-description">
+                        Gait patterns reveal depression, anxiety, and cognitive decline before clinical symptoms appear
+                    </div>
+                </div>
+                
+                <div class="impact-card">
+                    <span class="impact-icon">💊</span>
+                    <div class="impact-title">Personalized Medicine</div>
+                    <div class="impact-description">
+                        Individual gait signatures enable precise drug dosing and personalized treatment protocols
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dataset-intro">
+                <h2>The Path Forward</h2>
+                <p>As technology advances, gait analysis will become as routine as taking blood pressure. Wearable devices, smartphone apps, and smart environments will continuously monitor our movement patterns, providing early warnings and personalized health insights.</p>
+                <p>The future of healthcare isn't just about treating disease—it's about preventing it through the simple act of walking.</p>
+            </div>
+            
+            <div class="navigation-buttons">
+                <button class="prev-btn">← Back</button>
+                <button class="primary-btn" onclick="restartPresentation()">🔄 Start Over</button>
+            </div>
         </div>
 
         <!-- Slide Indicators -->
@@ -206,6 +368,10 @@
             <div class="dot" data-slide="1"></div>
             <div class="dot" data-slide="2"></div>
             <div class="dot" data-slide="3"></div>
+            <div class="dot" data-slide="4"></div>
+            <div class="dot" data-slide="5"></div>
+            <div class="dot" data-slide="6"></div>
+            <div class="dot" data-slide="7"></div>
         </div>
     </div>
 

@@ -4,8 +4,9 @@ let bobDots = [];
 let currentZoomData = [];
 let currentSlide = 0;
 let isRecording = false;
-const totalSlides = 4;
-
+let journeyStage = 0;
+const totalSlides = 8;
+let journeyPlaying = false;
 // Real data from CSV files - Fixed paths
 const SAMPLE_PEOPLE = [
     { id: 1, name: "Control", disease: "Healthy Control", file: "data/control.csv", color: "#28a745" },
@@ -35,7 +36,7 @@ const DISEASE_DESCRIPTIONS = {
 
 // DOM elements
 let bobEl, startBtn, statusEl, svg, svg1, bobChartSvg, personSelect, replayBtn, legend, comparisonLabel, showLinesCheckbox;
-let nextBtn1, nextBtn2, nextBtn3;
+let nextBtn1, nextBtn2, nextBtn3, nextBtn4, nextBtn5, nextBtn6, nextBtn7;
 
 // Store the last recorded pattern
 let lastBobPattern = null;
@@ -91,7 +92,11 @@ document.addEventListener('DOMContentLoaded', function() {
     showLinesCheckbox = document.getElementById("showLines");
     nextBtn1 = document.getElementById("nextBtn1");
     nextBtn2 = document.getElementById("nextBtn2");
-    nextBtn3 = document.getElementById("nextBtn3");    
+    nextBtn3 = document.getElementById("nextBtn3");   
+    nextBtn4 = document.getElementById("nextBtn4");    
+    nextBtn5 = document.getElementById("nextBtn5");   
+    nextBtn6 = document.getElementById("nextBtn6");   
+    nextBtn7 = document.getElementById("nextBtn7");   
     initializeApp();
 });
 
@@ -111,8 +116,20 @@ function initializeApp() {
     //     opt.textContent = `${p.name} (${p.disease})`;
     //     vsSelect.appendChild(opt);
     // });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowRight') {
+            nextSlide();
+        } else if (e.key === 'ArrowLeft') {
+            prevSlide();
+        } else if (e.key === 'Home') {
+            goToSlide(0);
+        } else if (e.key === 'End') {
+            goToSlide(totalSlides - 1);
+        }
+    });
     showControlPattern();
     setupEventListeners();
+    updateSlideIndicators();
 }
 function showDiseaseDescription(personName, isPlayground = false) {
     const description = DISEASE_DESCRIPTIONS[personName];
@@ -194,6 +211,10 @@ function setupEventListeners() {
     if (nextBtn1) nextBtn1.addEventListener('click', () => goToSlide(1));
     if (nextBtn2) nextBtn2.addEventListener('click', () => goToSlide(2));
     if (nextBtn3) nextBtn3.addEventListener('click', () => goToSlide(3));
+    if (nextBtn4) nextBtn4.addEventListener('click', () => goToSlide(4));
+    if (nextBtn5) nextBtn5.addEventListener('click', () => goToSlide(5));
+    if (nextBtn6) nextBtn6.addEventListener('click', () => goToSlide(6));
+    if (nextBtn7) nextBtn7.addEventListener('click', () => goToSlide(7));
 
     personSelect.addEventListener("change", async () => {
         const selectedId = personSelect.value;
@@ -233,37 +254,37 @@ function setupEventListeners() {
     document.getElementById("vsPlayBtn").addEventListener("click", playVsWalk);
 }
 
-function goToSlide(slideIndex) {
-    if (slideIndex < 0 || slideIndex >= totalSlides) return;
-    
+function showSlide(n) {
     const slides = document.querySelectorAll('.slide');
-    const dots = document.querySelectorAll('.dot');
-    const prevButtons = document.querySelectorAll('.prev-btn');
     
-    // Remove active class from current slide and dots
-    slides[currentSlide].classList.remove('active');
-    dots[currentSlide].classList.remove('active');
-    
-    // Add active class to new slide and dots
-    slides[slideIndex].classList.add('active');
-    dots[slideIndex].classList.add('active');
-    
-    // Update current slide
-    currentSlide = slideIndex;
-    
-    // Update previous buttons state
-    prevButtons.forEach(btn => {
-        btn.disabled = currentSlide === 0;
+    // Remove active class from all slides
+    slides.forEach(slide => {
+        slide.classList.remove('active', 'prev');
     });
     
-    // Update next buttons visibility based on recording state
-    if (currentSlide === 0) {
-        nextBtn1.disabled = bobSteps.length === 0;
+    // Add appropriate classes
+    if (n < slides.length) {
+        slides[n].classList.add('active');
+        
+        // Add prev class to previous slides
+        for (let i = 0; i < n; i++) {
+            slides[i].classList.add('prev');
+        }
     }
+    
+    updateSlideIndicators();
+}
 
-    if (slideIndex === 2 && bobSteps.length >= 2) {
-        drawVsCharts();
-    }
+function updateSlideIndicators() {
+    const dots = document.querySelectorAll('.dot');
+    dots.forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentSlide);
+    });
+}
+
+function goToSlide(n) {
+    currentSlide = n;
+    showSlide(currentSlide);
 }
 
 let bobSteps = [], startTime = null, intervalId = null;
@@ -1117,4 +1138,114 @@ function playVsWalk() {
     setTimeout(() => {
         if (timer3) timer3.style.display = "none";
     }, (maxTime - baseTime) * 1000 + 1000);
+}
+function nextSlide() {
+    if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        showSlide(currentSlide);
+    }
+}
+
+function prevSlide() {
+    if (currentSlide > 0) {
+        currentSlide--;
+        showSlide(currentSlide);
+    }
+}
+
+function restartPresentation() {
+    currentSlide = 0;
+    showSlide(currentSlide);
+    resetJourney();
+}
+function showApplication(type, event) {
+    const applications = {
+        'detection': {
+            title: 'Early Disease Detection',
+            description: 'Gait changes can appear 3-5 years before traditional symptoms. Machine learning algorithms analyze subtle walking patterns to identify neurological conditions in their earliest stages.',
+            icon: '🔍'
+        },
+        'monitoring': {
+            title: 'Treatment Monitoring', 
+            description: 'Real-time gait data provides objective measurements of treatment effectiveness. Doctors can adjust medications based on walking pattern changes rather than subjective patient reports.',
+            icon: '📈'
+        },
+        'prevention': {
+            title: 'Fall Prevention',
+            description: 'Gait instability patterns predict fall risk with 85% accuracy. Preventive interventions can be implemented before accidents occur, saving lives and healthcare costs.',
+            icon: '🛡️'
+        }
+    };
+
+    const app = applications[type];
+    if (app) {
+        // Visual feedback for selected application
+        document.querySelectorAll('.impact-card').forEach(card => {
+            card.style.transform = 'scale(0.95)';
+            card.style.opacity = '0.7';
+        });
+        
+        // Check if event exists before accessing target
+        if (event && event.target) {
+            const targetCard = event.target.closest('.impact-card');
+            if (targetCard) {
+                targetCard.style.transform = 'scale(1.05)';
+                targetCard.style.opacity = '1';
+            }
+        }
+        
+        setTimeout(() => {
+            document.querySelectorAll('.impact-card').forEach(card => {
+                card.style.transform = 'scale(1)';
+                card.style.opacity = '1';
+            });
+        }, 1000);
+    }
+}
+function playJourney() {
+    if (journeyPlaying) return;
+    
+    journeyPlaying = true;
+    const playBtn = document.getElementById('playBtn');
+    playBtn.disabled = true;
+    playBtn.textContent = '⏳ Playing...';
+    
+    resetJourney();
+    animateJourney();
+}
+
+function resetJourney() {
+    journeyStage = 0;
+    journeyPlaying = false;
+    const items = document.querySelectorAll('.timeline-item');
+    items.forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    const playBtn = document.getElementById('playBtn');
+    playBtn.disabled = false;
+    playBtn.textContent = '▶️ Play Journey';
+}
+
+function animateJourney() {
+    if (journeyStage >= 5) {
+        // Journey complete
+        setTimeout(() => {
+            resetJourney();
+        }, 2000);
+        return;
+    }
+    
+    // Activate current stage
+    const currentItem = document.querySelector(`[data-stage="${journeyStage}"]`);
+    if (currentItem) {
+        currentItem.classList.add('active');
+    }
+    
+    journeyStage++;
+    
+    // Continue animation
+    setTimeout(() => {
+        animateJourney();
+    }, 1500);
 }
