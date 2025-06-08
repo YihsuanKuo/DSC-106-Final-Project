@@ -7,6 +7,10 @@ let isRecording = false;
 let journeyStage = 0;
 const totalSlides = 8;
 let journeyPlaying = false;
+// Global variables to hold the currently filtered data for multi-charts
+let currentFilteredBobData = [];
+let currentFilteredPerson1Data = [];
+let currentFilteredPerson2Data = [];
 // Real data from CSV files - Fixed paths
 const SAMPLE_PEOPLE = [
     { id: 1, name: "Control", disease: "Healthy Control", file: "data/control.csv", color: "#28a745" },
@@ -339,6 +343,9 @@ let loadedData = {}; // Cache for loaded CSV data
 
 function reset() {
     bobSteps = [];
+    currentFilteredBobData = [];
+    currentFilteredPerson1Data = [];
+    currentFilteredPerson2Data = [];
     startTime = null;
     isRecording = false;
     svg.selectAll("*").remove();
@@ -584,22 +591,24 @@ function drawZoomChart(intervals, person, svg, startTime = 0, comparisonData = n
         .attr("fill", person.color)
         .attr("opacity", 0.8)
         .attr("stroke", "white")
-        .attr("stroke-width", 2);
+        .attr("stroke-width", 2)
+        .attr("data-original-fill", person.color); // Store original color here
 
+    // If comparison data is provided, draw it
     if (comparisonData && comparisonPerson) {
-        const zoomedComparisonData = comparisonData.filter(d => d.time >= startTime && d.time <= endTime);
-        chart.selectAll(".comparison-zoom-dot")
-            .data(zoomedComparisonData)
+        chart.selectAll(".comparison-dot")
+            .data(comparisonData)
             .enter()
             .append("circle")
-            .attr("class", "comparison-zoom-dot")
+            .attr("class", "comparison-dot")
             .attr("cx", d => x(d.time))
             .attr("cy", d => y(d.interval))
             .attr("r", 6)
             .attr("fill", comparisonPerson.color)
             .attr("opacity", 0.8)
             .attr("stroke", "white")
-            .attr("stroke-width", 2);
+            .attr("stroke-width", 2)
+            .attr("data-original-fill", comparisonPerson.color); // Store original color here
     }
 }
 
@@ -619,17 +628,21 @@ function replayZoomSteps(zoomData, svgZoom, char) {
         setTimeout(() => {
             // Animate the dot
             const dot = d3.select(dots.nodes()[i]);
-            dot.transition()
-                .duration(300)
-                .attr("r", 12)
-                .attr("fill", "#ff6b6b")
-                .attr("opacity", 1)
-                .transition()
-                .duration(300)
-                .attr("r", 6)
-                .attr("fill", "#28a745")
-                .attr("opacity", 0.8);
+            // In replayZoomSteps function:
+            if (!dot.empty()) {
+                const originalFill = dot.attr("data-original-fill"); // Get original color
 
+                dot.transition()
+                    .duration(300)
+                    .attr("r", 10)
+                    .attr("fill", "#ff6b6b") // Highlight color during animation
+                    .attr("opacity", 1)
+                    .transition()
+                    .duration(300)
+                    .attr("r", 6)
+                    .attr("fill", originalFill) // Use the stored original color
+                    .attr("opacity", 0.8);
+            }
             takeStep(controlChar);
 
             // Reset to center after short delay
@@ -1168,75 +1181,136 @@ async function updateMultiCharts() {
     multiLegend.style.display = "none";
     multiPlayBtn.disabled = true;
 
+    // Set fixed colors for person1 and person2 for drawLongChart
+    const person1FixedColor = { color: "#6f42c1" }; // Fixed purple
+    const person2FixedColor = { color: "#fd7e14" }; // Fixed orange
+
+    // Load data for Person 1
     if (selectedId1) {
-        person1 = EXPLORE_PEOPLE.find(p => p.id == selectedId1);
-        // Create a temporary person object for Person 1 with a fixed purple color
-        const person1FixedColor = { ...person1, color: "#6f42c1" };
+        person1 = EXPLORE_PEOPLE.find((p) => p.id == selectedId1);
         data1 = await loadCSVData(person1);
+    }
 
-        const person1BrushCallback = (x0, x1) => {
-            const filteredBobData = bobData.filter(d => d.time >= x0 && d.time <= x1);
-            const filteredData1 = data1.filter(d => d.time >= x0 && d.time <= x1);
-            const filteredData2 = data2.filter(d => d.time >= x0 && d.time <= x1);
-            const maxOverallTime = Math.max(
-                d3.max(filteredBobData, d => d.time) || 0,
-                d3.max(filteredData1, d => d.time) || 0,
-                d3.max(filteredData2, d => d.time) || 0
-            );
+    // Load data for Person 2
+    if (selectedId2) {
+        person2 = EXPLORE_PEOPLE.find((p) => p.id == selectedId2);
+        data2 = await loadCSVData(person2);
+    }
+    
+    // Initialize current filtered data for the 0-10s window (or empty if no data)
+    // This ensures a default view when the slide loads or dropdowns change without brushing
+    currentFilteredBobData = bobData
+        .filter((d) => d.time >= 0 && d.time <= 10)
+        .map((d) => ({ ...d, time: d.time - 0 }));
 
-            drawMultiZoomChart(
-                filteredBobData, {name: "Bob", color: "#007acc"},
-                filteredData1, person1,
-                filteredData2, person2,
-                maxOverallTime
-            );
-            currentZoomData = { bob: filteredBobData, person1: filteredData1, person2: filteredData2 };
+    if (person1 && data1.length > 0) {
+        currentFilteredPerson1Data = data1
+            .filter((d) => d.time >= 0 && d.time <= 10)
+            .map((d) => ({ ...d, time: d.time - 0 }));
+    } else {
+        currentFilteredPerson1Data = [];
+    }
+
+    if (person2 && data2.length > 0) {
+        currentFilteredPerson2Data = data2
+            .filter((d) => d.time >= 0 && d.time <= 10)
+            .map((d) => ({ ...d, time: d.time - 0 }));
+    } else {
+        currentFilteredPerson2Data = [];
+    }
+
+    // Brush callback for Person 1's long chart
+    // This callback ONLY affects currentFilteredPerson1Data
+    const person1BrushCallback = (x0, x1) => {
+        currentFilteredPerson1Data = data1 // Use the full data1 here
+            .filter((d) => d.time >= x0 && d.time <= x1)
+            .map((d) => ({ ...d, time: d.time - x0 })); // Normalize time to be between 0 and 10 based on brush start
+
+        // Recalculate maxOverallTime based on ALL currently filtered data
+        const maxOverallTime = Math.max(
+            d3.max(currentFilteredBobData, (d) => d.time) || 0,
+            d3.max(currentFilteredPerson1Data, (d) => d.time) || 0,
+            d3.max(currentFilteredPerson2Data, (d) => d.time) || 0
+        );
+        
+        // Redraw multiZoomChart with updated Person 1 data and existing Bob/Person 2 data
+        drawMultiZoomChart(
+            currentFilteredBobData, {name: "Bob", color: "#007acc"},
+            currentFilteredPerson1Data, person1, // Use currentFilteredPerson1Data
+            currentFilteredPerson2Data, person2, // Use currentFilteredPerson2Data (can be empty if not brushed/selected)
+            maxOverallTime
+        );
+        // Update currentZoomData for replay button
+        currentZoomData = {
+            bob: currentFilteredBobData,
+            person1: currentFilteredPerson1Data,
+            person2: currentFilteredPerson2Data,
         };
+    };
 
-        drawLongChart(data1, person1FixedColor, d3.select("#multiChart1"), d3.select("#multiZoomChart"), true, person1BrushCallback); // Changed to true for brush
+    // Brush callback for Person 2's long chart
+    // This callback ONLY affects currentFilteredPerson2Data
+    const person2BrushCallback = (x0, x1) => {
+        currentFilteredPerson2Data = data2 // Use the full data2 here
+            .filter((d) => d.time >= x0 && d.time <= x1)
+            .map((d) => ({ ...d, time: d.time - x0 })); // Normalize time to be between 0 and 10 based on brush start
+
+        // Recalculate maxOverallTime based on ALL currently filtered data
+        const maxOverallTime = Math.max(
+            d3.max(currentFilteredBobData, (d) => d.time) || 0,
+            d3.max(currentFilteredPerson1Data, (d) => d.time) || 0,
+            d3.max(currentFilteredPerson2Data, (d) => d.time) || 0
+        );
+
+        // Redraw multiZoomChart with updated Person 2 data and existing Bob/Person 1 data
+        drawMultiZoomChart(
+            currentFilteredBobData, {name: "Bob", color: "#007acc"},
+            currentFilteredPerson1Data, person1, // Use currentFilteredPerson1Data (can be empty if not brushed/selected)
+            currentFilteredPerson2Data, person2, // Use currentFilteredPerson2Data
+            maxOverallTime
+        );
+        // Update currentZoomData for replay button
+        currentZoomData = {
+            bob: currentFilteredBobData,
+            person1: currentFilteredPerson1Data,
+            person2: currentFilteredPerson2Data,
+        };
+    };
+
+    // Draw long charts for selected persons, passing their specific brush callbacks
+    if (selectedId1) {
+        drawLongChart(data1, { ...person1, color: person1FixedColor.color }, d3.select("#multiChart1"), d3.select("#multiZoomChart"), true, person1BrushCallback);
     }
     if (selectedId2) {
-        person2 = EXPLORE_PEOPLE.find(p => p.id == selectedId2);
-        // Create a temporary person object for Person 2 with a fixed orange color
-        const person2FixedColor = { ...person2, color: "#fd7e14" };
-        data2 = await loadCSVData(person2);
-
-        const person2BrushCallback = (x0, x1) => {
-            const filteredBobData = bobData.filter(d => d.time >= x0 && d.time <= x1);
-            const filteredData1 = data1.filter(d => d.time >= x0 && d.time <= x1);
-            const filteredData2 = data2.filter(d => d.time >= x0 && d.time <= x1);
-             const maxOverallTime = Math.max(
-                d3.max(filteredBobData, d => d.time) || 0,
-                d3.max(filteredData1, d => d.time) || 0,
-                d3.max(filteredData2, d => d.time) || 0
-            );
-            drawMultiZoomChart(
-                filteredBobData, {name: "Bob", color: "#007acc"},
-                filteredData1, person1,
-                filteredData2, person2,
-                maxOverallTime
-            );
-            currentZoomData = { bob: filteredBobData, person1: filteredData1, person2: filteredData2 };
-        };
-
-        drawLongChart(data2, person2FixedColor, d3.select("#multiChart2"), d3.select("#multiZoomChart"), true, person2BrushCallback); // Changed to true for brush
+        drawLongChart(data2, { ...person2, color: person2FixedColor.color }, d3.select("#multiChart2"), d3.select("#multiZoomChart"), true, person2BrushCallback);
     }
 
-    // Only draw the combined zoom chart if Bob's data and at least one other person is selected
+    // Initial draw of the combined zoom chart with the first 10 seconds if no brush has been moved yet
+    // This uses the initially filtered data (0-10s)
     if (bobData.length > 0 && (selectedId1 || selectedId2)) {
-        // Find the maximum time across all available datasets
-        const allTimes = [
-            ...(bobData.length > 0 ? bobData.map(d => d.time) : []),
-            ...(data1.length > 0 ? data1.map(d => d.time) : []),
-            ...(data2.length > 0 ? data2.map(d => d.time) : []),
-        ];
-        const maxOverallTime = allTimes.length > 0 ? d3.max(allTimes) : 10; // Default to 10s if no data
-
-        drawMultiZoomChart(bobData, {name: "Bob", color: "#007acc"}, data1, person1, data2, person2, maxOverallTime);
+        const maxOverallTime = Math.max(
+            d3.max(currentFilteredBobData, (d) => d.time) || 0,
+            d3.max(currentFilteredPerson1Data, (d) => d.time) || 0,
+            d3.max(currentFilteredPerson2Data, (d) => d.time) || 0
+        );
+        drawMultiZoomChart(
+            currentFilteredBobData,
+            { name: "Bob", color: "#007acc" },
+            currentFilteredPerson1Data,
+            person1,
+            currentFilteredPerson2Data,
+            person2,
+            maxOverallTime
+        );
         multiLegend.style.display = "flex"; // Show legend
         multiPlayBtn.disabled = false; // Enable play button
         updateMultiLegend(person1, person2); // Update legend labels and colors
-        currentZoomData = { bob: bobData, person1: data1, person2: data2 }; // Initialize full data for replay
+        // Store the initial normalized data for replay
+        currentZoomData = {
+            bob: currentFilteredBobData,
+            person1: currentFilteredPerson1Data,
+            person2: currentFilteredPerson2Data,
+        };
     } else {
         multiLegend.style.display = "none";
         multiPlayBtn.disabled = true;
@@ -1271,7 +1345,7 @@ function drawMultiZoomChart(bobData, bobPerson, person1Data, person1Person, pers
         height = 400 - margin.top - margin.bottom;
 
     const x = d3.scaleLinear()
-        .domain([0, maxTime]) // Use the maximum time across all datasets
+        .domain([0, 10]) // Use the maximum time across all datasets
         .range([0, width]);
 
     const allIntervals = [
@@ -1365,11 +1439,14 @@ function drawMultiZoomChart(bobData, bobPerson, person1Data, person1Person, pers
 }
 
 async function playMultiWalk() {
-    const bobZoom = currentZoomData.bob || [];
-    const person1Zoom = currentZoomData.person1 || [];
-    const person2Zoom = currentZoomData.person2 || [];
+    const bobZoom = currentFilteredBobData || []; // Use global filtered data
+    const person1Zoom = currentFilteredPerson1Data || []; // Use global filtered data
+    const person2Zoom = currentFilteredPerson2Data || []; // Use global filtered data
 
-    if (!bobZoom.length && !person1Zoom.length && !person2Zoom.length) return;
+    if (!bobZoom.length && !person1Zoom.length && !person2Zoom.length) {
+        console.log("No data to replay in multi-walk.");
+        return;
+    }
 
     multiPlayBtn.disabled = true;
     multiPlayBtn.textContent = "⏳ Playing...";
