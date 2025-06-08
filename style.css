@@ -549,3 +549,30 @@ select {
         min-width: unset; /* Remove min-width when stacked */
     }
 }
+.dataset-intro {
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 25px 30px;
+    margin: 20px auto;
+    max-width: 1000px;
+    text-align: left;
+    color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(12px);
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.dataset-intro h2 {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    color: white;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+}
+
+.dataset-intro p {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 10px;
+}
