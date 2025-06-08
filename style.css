@@ -478,3 +478,74 @@ select {
     font-size: 5rem;
     transition: transform 0.3s ease;
 }
+
+/* New styles for multi-person comparison on slide 4 */
+.compare-multi-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.emoji-row-multi {
+    display: flex;
+    gap: 50px; /* Reduced gap for three emojis */
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+#bobMultiEmoji, #person1MultiEmoji, #person2MultiEmoji {
+    font-size: 5rem; /* Slightly smaller for three */
+    transition: transform 0.3s ease;
+}
+
+.multi-comparison-controls {
+    display: flex;
+    flex-direction: row; /* Arrange dropdowns in a row */
+    gap: 30px;
+    margin: 20px 0;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+}
+
+.dropdown-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.chart-group-long {
+    display: flex;
+    flex-direction: row; /* Two long charts side-by-side */
+    gap: 20px;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+}
+
+.chart-group-long .chart-container {
+    flex: 1; /* Distribute space evenly */
+    min-width: 400px; /* Minimum width for each chart */
+}
+
+/* Ensure svgs inside chart-container adjust */
+.chart-container svg {
+    width: 100%;
+    height: auto; /* Maintain aspect ratio */
+}
+
+/* Adjustments for responsiveness */
+@media (max-width: 1024px) {
+    .multi-comparison-controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .chart-group-long {
+        flex-direction: column; /* Stack long charts vertically on smaller screens */
+    }
+    .chart-group-long .chart-container {
+        min-width: unset; /* Remove min-width when stacked */
+    }
+}

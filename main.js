@@ -166,12 +166,30 @@ function setupEventListeners() {
 
         if (timer2) startTimer(timer2); // 👈 start the timer
 
-        await replayZoomSteps(currentZoomData, svgZoom);
+        await replayZoomSteps(currentZoomData, svgZoom, document.getElementById("controlCharacter"));
 
         controlReplayBtn.disabled = false;
         controlReplayBtn.textContent = "▶️ Play NOT Bob's Walk";
 
         if (timer2) timer2.style.display = 'none'; // 👈 hide after replay
+    });
+    diseaseReplayBtn.addEventListener("click", async () => {
+        console.log("Control replay clicked");
+
+        const svgZoom = d3.select('#zoomChart2');
+        const timer3 = document.getElementById("timer3");
+
+        diseaseReplayBtn.disabled = true;
+        diseaseReplayBtn.textContent = "⏳ Replaying...";
+
+        if (timer3) startTimer(timer3); // 👈 start the timer
+
+        await replayZoomSteps(currentZoomData, svgZoom, document.getElementById("diseaseCharacter"));
+
+        diseaseReplayBtn.disabled = false;
+        diseaseReplayBtn.textContent = "▶️ Play Walk";
+
+        if (timer3) timer3.style.display = 'none'; // 👈 hide after replay
     });
     if (nextBtn1) nextBtn1.addEventListener('click', () => goToSlide(1));
     if (nextBtn2) nextBtn2.addEventListener('click', () => goToSlide(2));
@@ -509,9 +527,9 @@ function drawZoomChart(intervals, person, svg, startTime = 0, comparisonData = n
     }
 }
 
-function replayZoomSteps(zoomData, svgZoom) {
+function replayZoomSteps(zoomData, svgZoom, char) {
     const dots = svgZoom.selectAll(".zoom-dot");
-    const controlChar = document.getElementById("controlCharacter");
+    const controlChar = char;
     if (zoomData.length === 0 || dots.empty() || !controlChar) return;
 
     const sortedData = [...zoomData].sort((a, b) => a.time - b.time);
