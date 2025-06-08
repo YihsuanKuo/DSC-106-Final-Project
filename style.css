@@ -479,6 +479,8 @@ select {
     transition: transform 0.3s ease;
 }
 
+/* ... existing CSS ... */
+
 /* New styles for multi-person comparison on slide 4 */
 .compare-multi-container {
     display: flex;
@@ -536,6 +538,13 @@ select {
     height: auto; /* Maintain aspect ratio */
 }
 
+/* Specific fixed sizes for the multi-charts */
+#multiChart1, #multiChart2 {
+    width: 800px;  /* Set fixed width */
+    height: 200px; /* Set fixed height */
+    overflow: visible; /* Ensure content like brush is not clipped */
+}
+
 /* Adjustments for responsiveness */
 @media (max-width: 1024px) {
     .multi-comparison-controls {
@@ -547,6 +556,10 @@ select {
     }
     .chart-group-long .chart-container {
         min-width: unset; /* Remove min-width when stacked */
+    }
+    #multiChart1, #multiChart2 {
+        width: 100%; /* Make them responsive on smaller screens */
+        height: 200px; /* Keep height fixed, or adjust as needed */
     }
 }
 .dataset-intro {

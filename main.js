@@ -15,6 +15,29 @@ const SAMPLE_PEOPLE = [
     { id: 4, name: "Parkinson's", disease: "Parkinson's Disease", file: "data/park.csv", color: "#fd7e14" }
 ];
 
+const EXPLORE_PEOPLE = [
+    // Control Group - based on age
+    { id: 1, name: "Control (20 yrs)", file: "data/control_20.csv" },
+    { id: 2, name: "Control (40 yrs)", file: "data/control_40.csv" },
+    { id: 3, name: "Control (69 yrs)", file: "data/control_69.csv" },
+
+    // ALS Group - based on disease stage
+    { id: 4, name: "ALS (Early)", file: "data/als_early.csv" },
+    { id: 5, name: "ALS (Medium)", file: "data/als_medium.csv" },
+    { id: 6, name: "ALS (Late)", file: "data/als_late.csv" },
+
+    // Huntington's Group - based on disease stage
+    { id: 7, name: "Huntington's (Early)", file: "data/hunt_early.csv" },
+    { id: 8, name: "Huntington's (Medium)", file: "data/hunt_medium.csv" },
+    { id: 9, name: "Huntington's (Late)", file: "data/hunt_late.csv" },
+
+    // Parkinson's Group - based on disease stage
+    { id: 10, name: "Parkinson's (Early)", file: "data/park_early.csv" },
+    { id: 11, name: "Parkinson's (Medium)", file: "data/park_medium.csv" },
+    { id: 12, name: "Parkinson's (Late)", file: "data/park_late.csv" }
+];
+
+
 const DISEASE_DESCRIPTIONS = {
     "Control": {
         title: "Healthy Control",
@@ -37,6 +60,8 @@ const DISEASE_DESCRIPTIONS = {
 // DOM elements
 let bobEl, startBtn, statusEl, svg, svg1, bobChartSvg, personSelect, replayBtn, legend, comparisonLabel, showLinesCheckbox;
 let nextBtn1, nextBtn2, nextBtn3, nextBtn4, nextBtn5, nextBtn6, nextBtn7;
+let personSelectMulti1, personSelectMulti2; // Added these for the new dropdowns
+let person1MultiEmoji, person2MultiEmoji, multiPlayBtn, multiLegend, person1LegendDot, person2LegendDot, person1LegendLabel, person2LegendLabel; // Added multi-chart specific elements
 
 // Store the last recorded pattern
 let lastBobPattern = null;
@@ -96,7 +121,18 @@ document.addEventListener('DOMContentLoaded', function() {
     nextBtn4 = document.getElementById("nextBtn4");    
     nextBtn5 = document.getElementById("nextBtn5");   
     nextBtn6 = document.getElementById("nextBtn6");   
-    nextBtn7 = document.getElementById("nextBtn7");   
+    nextBtn7 = document.getElementById("nextBtn7");
+    personSelectMulti1 = document.getElementById("personSelectMulti1"); // Get multi-select dropdown 1
+    personSelectMulti2 = document.getElementById("personSelectMulti2"); // Get multi-select dropdown 2
+    person1MultiEmoji = document.getElementById("person1MultiEmoji");
+    person2MultiEmoji = document.getElementById("person2MultiEmoji");
+    multiPlayBtn = document.getElementById("multiPlayBtn");
+    multiLegend = document.getElementById("multiLegend");
+    person1LegendDot = document.getElementById("person1LegendDot");
+    person2LegendDot = document.getElementById("person2LegendDot");
+    person1LegendLabel = document.getElementById("person1LegendLabel");
+    person2LegendLabel = document.getElementById("person2LegendLabel");   
+
     initializeApp();
 });
 
@@ -109,13 +145,22 @@ function initializeApp() {
         personSelect.appendChild(option);
     });
 
-    // const vsSelect = document.getElementById("vsSelect");
-    // SAMPLE_PEOPLE.forEach(p => {
-    //     const opt = document.createElement("option");
-    //     opt.value = p.id;
-    //     opt.textContent = `${p.name} (${p.disease})`;
-    //     vsSelect.appendChild(opt);
-    // });
+    // Populate personSelectMulti1 with EXPLORE_PEOPLE
+    EXPLORE_PEOPLE.forEach(p => {
+        const option = document.createElement("option");
+        option.value = p.id;
+        option.textContent = p.name; // Use p.name as per EXPLORE_PEOPLE structure
+        personSelectMulti1.appendChild(option);
+    });
+
+    // Populate personSelectMulti2 with EXPLORE_PEOPLE
+    EXPLORE_PEOPLE.forEach(p => {
+        const option = document.createElement("option");
+        option.value = p.id;
+        option.textContent = p.name; // Use p.name as per EXPLORE_PEOPLE structure
+        personSelectMulti2.appendChild(option);
+    });
+
     document.addEventListener('keydown', function(e) {
         if (e.key === 'ArrowRight') {
             nextSlide();
@@ -235,6 +280,11 @@ function setupEventListeners() {
         drawLongChart(selectIntervals, selectPerson, d3.select('#chart2'), d3.select('#zoomChart2'));
         drawZoomChart(selectIntervals, selectPerson, d3.select('#zoomChart2'), 0);
     });
+
+    // Add change event listeners for multi-select dropdowns
+    personSelectMulti1.addEventListener("change", updateMultiCharts);
+    personSelectMulti2.addEventListener("change", updateMultiCharts);
+    multiPlayBtn.addEventListener("click", playMultiWalk);
     
     // Slide indicators
     document.querySelectorAll('.dot').forEach((dot, index) => {
@@ -249,9 +299,6 @@ function setupEventListeners() {
             }
         });
     });
-
-    document.getElementById("vsSelect").addEventListener("change", drawVsCharts);
-    document.getElementById("vsPlayBtn").addEventListener("click", playVsWalk);
 }
 
 function showSlide(n) {
@@ -314,6 +361,14 @@ function reset() {
         clearInterval(timerInterval);
         timerInterval = null;
     }
+    // Reset multi-selects and charts on slide 4
+    if (personSelectMulti1) personSelectMulti1.value = "";
+    if (personSelectMulti2) personSelectMulti2.value = "";
+    d3.select("#multiChart1").selectAll("*").remove();
+    d3.select("#multiChart2").selectAll("*").remove();
+    d3.select("#multiZoomChart").selectAll("*").remove();
+    multiLegend.style.display = "none";
+    multiPlayBtn.disabled = true;
 }
 
 // Load CSV data with better error handling
@@ -912,162 +967,6 @@ function replaySteps() {
     }, totalTime + 1000);
 }
 
-async function drawVsCharts() {
-    const vsSelect = document.getElementById("vsSelect");
-    const selectedPersonId = vsSelect.value;
-
-    if (!selectedPersonId || bobSteps.length === 0) {
-        d3.select("#vsChart1").selectAll("*").remove();
-        d3.select("#vsZoomChart1").selectAll("*").remove();
-        hideDiseaseDescription();
-        return;
-    }
-
-    const bobData = processStepsToData(bobSteps);
-    const selectedPerson = SAMPLE_PEOPLE.find(p => p.id == selectedPersonId);
-    // Ensure diseaseData is an array, even if loadCSVData returns null/undefined (re-added for robustness)
-    const diseaseData = await loadCSVData(selectedPerson) || []; 
-
-    // Define the custom brush callback for Slide 3
-    const vsChartBrushCallback = (x0, x1) => {
-        // Bob's data remains unfiltered – always pass the full bobData
-        const filteredDiseaseData = diseaseData.filter(d => d.time >= x0 && d.time <= x1);
-
-        const zoomSvg = d3.select('#vsZoomChart1');
-        drawZoomChart(
-            bobData, // Pass the FULL bobData here
-            { name: "Bob", color: "#007acc" }, // Bob's person object
-            zoomSvg,
-            0, // startTime is no longer used for x-axis domain in drawZoomChart, but keep for consistency
-            filteredDiseaseData, // The filtered disease data
-            selectedPerson // The selected disease person object
-        );
-        // Store full bobData and filtered diseaseData for replay on vs charts
-        currentZoomData = [bobData, filteredDiseaseData];
-    };
-
-    // Call drawLongChart for the full walking pattern with the custom brush callback
-    drawLongChart(
-        diseaseData, // Data for the long chart itself (disease data)
-        selectedPerson, // Person for the long chart itself
-        d3.select("#vsChart1"),
-        true, // Include brush
-        vsChartBrushCallback // Pass the custom callback
-    );
-
-    // Initial drawZoomChart for the full 0-10s range (before brush interaction)
-    drawZoomChart(
-        bobData, // Full bobData
-        { name: "Bob", color: "#007acc" },
-        d3.select("#vsZoomChart1"),
-        0, // startTime
-        diseaseData, // Full diseaseData
-        selectedPerson
-    );
-    // Initialize currentZoomData with the full range for initial replay
-    currentZoomData = [bobData, diseaseData];
-
-
-    showDiseaseDescription(selectedPerson.name);
-}
-// New function for comparison long chart
-function drawComparisonLongChart(bobData, bobPerson, diseaseData, diseasePerson, svg) {
-    svg.selectAll("*").remove();
-
-    const margin = { top: 20, right: 40, bottom: 60, left: 80 },
-        width = 800 - margin.left - margin.right,
-        height = 200 - margin.top - margin.bottom;
-
-    const allData = [...bobData, ...diseaseData];
-
-    const x = d3.scaleLinear()
-        .domain([0, d3.max(allData, d => d.time)])
-        .range([0, width]);
-
-    const y = d3.scaleLinear()
-        .domain([0, Math.max(2, d3.max(allData, d => d.interval))])
-        .range([height, 0]);
-
-    const chart = svg.append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    // X-axis
-    chart.append("g")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x))
-        .append("text")
-        .attr("x", width / 2)
-        .attr("y", 40)
-        .attr("fill", "black")
-        .style("text-anchor", "middle")
-        .style("font-size", "14px")
-        .text("Time (seconds)");
-
-    // Y-axis
-    chart.append("g")
-        .call(d3.axisLeft(y))
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", -50)
-        .attr("x", -height / 2)
-        .attr("fill", "black")
-        .style("text-anchor", "middle")
-        .style("font-size", "14px")
-        .text("Stride Interval (s)");
-
-    // Bob dots
-    chart.selectAll(".bob-dot")
-        .data(bobData)
-        .enter()
-        .append("circle")
-        .attr("class", "bob-dot")
-        .attr("cx", d => x(d.time))
-        .attr("cy", d => y(d.interval))
-        .attr("r", 6)
-        .attr("fill", "#007acc") // Bob's color
-        .attr("opacity", 0.8)
-        .attr("stroke", "white")
-        .attr("stroke-width", 2);
-
-    // Disease dots
-    chart.selectAll(".disease-dot")
-        .data(diseaseData)
-        .enter()
-        .append("circle")
-        .attr("class", "disease-dot")
-        .attr("cx", d => x(d.time))
-        .attr("cy", d => y(d.interval))
-        .attr("r", 6)
-        .attr("fill", diseasePerson.color) // Disease color
-        .attr("opacity", 0.8)
-        .attr("stroke", "white")
-        .attr("stroke-width", 2);
-
-    // Brush (similar to before, now filtering both datasets for the zoom chart)
-    const brush = d3.brushX()
-        .extent([[0, 0], [width, height]])
-        .on("brush end", ({ selection }) => {
-            if (!selection) return;
-            const [x0, x1] = selection.map(x.invert);
-            const zoomSvg = d3.select("#vsZoomChart1"); // This is specific to the comparison chart
-            drawZoomComparisonChart(
-                bobData.filter(d => d.time >= x0 && d.time <= x1),
-                diseaseData.filter(d => d.time >= x0 && d.time <= x1),
-                zoomSvg,
-                x0
-            );
-            currentZoomData = [
-                bobData.filter(d => d.time >= x0 && d.time <= x1),
-                diseaseData.filter(d => d.time >= x0 && d.time <= x1)
-            ];
-        });
-
-    chart.append("g")
-        .attr("class", "brush")
-        .call(brush)
-        .call(brush.move, [0, 10].map(x));  // Initial brush range
-}
-
 function drawZoomComparisonChart(bob, disease, svg, startTime = 0) {
     svg.selectAll("*").remove();
     const margin = { top: 20, right: 40, bottom: 60, left: 80 },
@@ -1248,4 +1147,309 @@ function animateJourney() {
     setTimeout(() => {
         animateJourney();
     }, 1500);
+}
+
+// Function to update multi-comparison charts on slide 4
+async function updateMultiCharts() {
+    const selectedId1 = personSelectMulti1.value;
+    const selectedId2 = personSelectMulti2.value;
+
+    const bobData = processStepsToData(bobSteps);
+
+    let person1 = null;
+    let person2 = null;
+    let data1 = [];
+    let data2 = [];
+
+    // Clear previous charts
+    d3.select("#multiChart1").selectAll("*").remove();
+    d3.select("#multiChart2").selectAll("*").remove();
+    d3.select("#multiZoomChart").selectAll("*").remove();
+    multiLegend.style.display = "none";
+    multiPlayBtn.disabled = true;
+
+    if (selectedId1) {
+        person1 = EXPLORE_PEOPLE.find(p => p.id == selectedId1);
+        // Create a temporary person object for Person 1 with a fixed purple color
+        const person1FixedColor = { ...person1, color: "#6f42c1" };
+        data1 = await loadCSVData(person1);
+
+        const person1BrushCallback = (x0, x1) => {
+            const filteredBobData = bobData.filter(d => d.time >= x0 && d.time <= x1);
+            const filteredData1 = data1.filter(d => d.time >= x0 && d.time <= x1);
+            const filteredData2 = data2.filter(d => d.time >= x0 && d.time <= x1);
+            const maxOverallTime = Math.max(
+                d3.max(filteredBobData, d => d.time) || 0,
+                d3.max(filteredData1, d => d.time) || 0,
+                d3.max(filteredData2, d => d.time) || 0
+            );
+
+            drawMultiZoomChart(
+                filteredBobData, {name: "Bob", color: "#007acc"},
+                filteredData1, person1,
+                filteredData2, person2,
+                maxOverallTime
+            );
+            currentZoomData = { bob: filteredBobData, person1: filteredData1, person2: filteredData2 };
+        };
+
+        drawLongChart(data1, person1FixedColor, d3.select("#multiChart1"), d3.select("#multiZoomChart"), true, person1BrushCallback); // Changed to true for brush
+    }
+    if (selectedId2) {
+        person2 = EXPLORE_PEOPLE.find(p => p.id == selectedId2);
+        // Create a temporary person object for Person 2 with a fixed orange color
+        const person2FixedColor = { ...person2, color: "#fd7e14" };
+        data2 = await loadCSVData(person2);
+
+        const person2BrushCallback = (x0, x1) => {
+            const filteredBobData = bobData.filter(d => d.time >= x0 && d.time <= x1);
+            const filteredData1 = data1.filter(d => d.time >= x0 && d.time <= x1);
+            const filteredData2 = data2.filter(d => d.time >= x0 && d.time <= x1);
+             const maxOverallTime = Math.max(
+                d3.max(filteredBobData, d => d.time) || 0,
+                d3.max(filteredData1, d => d.time) || 0,
+                d3.max(filteredData2, d => d.time) || 0
+            );
+            drawMultiZoomChart(
+                filteredBobData, {name: "Bob", color: "#007acc"},
+                filteredData1, person1,
+                filteredData2, person2,
+                maxOverallTime
+            );
+            currentZoomData = { bob: filteredBobData, person1: filteredData1, person2: filteredData2 };
+        };
+
+        drawLongChart(data2, person2FixedColor, d3.select("#multiChart2"), d3.select("#multiZoomChart"), true, person2BrushCallback); // Changed to true for brush
+    }
+
+    // Only draw the combined zoom chart if Bob's data and at least one other person is selected
+    if (bobData.length > 0 && (selectedId1 || selectedId2)) {
+        // Find the maximum time across all available datasets
+        const allTimes = [
+            ...(bobData.length > 0 ? bobData.map(d => d.time) : []),
+            ...(data1.length > 0 ? data1.map(d => d.time) : []),
+            ...(data2.length > 0 ? data2.map(d => d.time) : []),
+        ];
+        const maxOverallTime = allTimes.length > 0 ? d3.max(allTimes) : 10; // Default to 10s if no data
+
+        drawMultiZoomChart(bobData, {name: "Bob", color: "#007acc"}, data1, person1, data2, person2, maxOverallTime);
+        multiLegend.style.display = "flex"; // Show legend
+        multiPlayBtn.disabled = false; // Enable play button
+        updateMultiLegend(person1, person2); // Update legend labels and colors
+        currentZoomData = { bob: bobData, person1: data1, person2: data2 }; // Initialize full data for replay
+    } else {
+        multiLegend.style.display = "none";
+        multiPlayBtn.disabled = true;
+    }
+}
+
+function updateMultiLegend(person1, person2) {
+    if (person1) {
+        person1LegendDot.style.backgroundColor = "#6f42c1"; // Fixed purple for Person 1 in legend
+        person1LegendLabel.textContent = person1.name;
+    } else {
+        person1LegendDot.style.backgroundColor = "transparent";
+        person1LegendLabel.textContent = "Person 1";
+    }
+
+    if (person2) {
+        person2LegendDot.style.backgroundColor = "#fd7e14"; // Fixed orange for Person 2 in legend
+        person2LegendLabel.textContent = person2.name;
+    } else {
+        person2LegendDot.style.backgroundColor = "transparent";
+        person2LegendLabel.textContent = "Person 2";
+    }
+}
+
+// New function to draw the combined zoom chart for Bob, Person 1, and Person 2
+function drawMultiZoomChart(bobData, bobPerson, person1Data, person1Person, person2Data, person2Person, maxTime) {
+    const svg = d3.select("#multiZoomChart");
+    svg.selectAll("*").remove();
+
+    const margin = { top: 20, right: 40, bottom: 60, left: 80 },
+        width = 800 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    const x = d3.scaleLinear()
+        .domain([0, maxTime]) // Use the maximum time across all datasets
+        .range([0, width]);
+
+    const allIntervals = [
+        ...(bobData.length > 0 ? bobData.map(d => d.interval) : []),
+        ...(person1Data.length > 0 ? person1Data.map(d => d.interval) : []),
+        ...(person2Data.length > 0 ? person2Data.map(d => d.interval) : [])
+    ];
+    const maxInterval = allIntervals.length > 0 ? d3.max(allIntervals) : 2;
+
+    const y = d3.scaleLinear()
+        .domain([0, Math.max(2, maxInterval * 1.1)])
+        .range([height, 0]);
+
+    const chart = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // X-axis
+    chart.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x))
+        .append("text")
+        .attr("x", width / 2)
+        .attr("y", 40)
+        .attr("fill", "black")
+        .style("text-anchor", "middle")
+        .style("font-size", "14px")
+        .text("Time (seconds)");
+
+    // Y-axis
+    chart.append("g")
+        .call(d3.axisLeft(y))
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -50)
+        .attr("x", -height / 2)
+        .attr("fill", "black")
+        .style("text-anchor", "middle")
+        .style("font-size", "14px")
+        .text("Stride Interval (s)");
+
+    // Plot Bob's data
+    if (bobData.length > 0) {
+        chart.selectAll(".bob-zoom-dot")
+            .data(bobData)
+            .enter()
+            .append("circle")
+            .attr("class", "bob-zoom-dot")
+            .attr("cx", d => x(d.time))
+            .attr("cy", d => y(d.interval))
+            .attr("r", 6)
+            .attr("fill", bobPerson.color)
+            .attr("opacity", 0.8)
+            .attr("stroke", "white")
+            .attr("stroke-width", 2);
+    }
+
+    // Plot Person 1 data (always purple)
+    if (person1Data.length > 0 && person1Person) {
+        chart.selectAll(".person1-zoom-dot")
+            .data(person1Data)
+            .enter()
+            .append("circle")
+            .attr("class", "person1-zoom-dot")
+            .attr("cx", d => x(d.time))
+            .attr("cy", d => y(d.interval))
+            .attr("r", 6)
+            .attr("fill", "#6f42c1") // Fixed purple for Person 1
+            .attr("opacity", 0.8)
+            .attr("stroke", "white")
+            .attr("stroke-width", 2);
+    }
+
+    // Plot Person 2 data (always orange)
+    if (person2Data.length > 0 && person2Person) {
+        chart.selectAll(".person2-zoom-dot")
+            .data(person2Data)
+            .enter()
+            .append("circle")
+            .attr("class", "person2-zoom-dot")
+            .attr("cx", d => x(d.time))
+            .attr("cy", d => y(d.interval))
+            .attr("r", 6)
+            .attr("fill", "#fd7e14") // Fixed orange for Person 2
+            .attr("opacity", 0.8)
+            .attr("stroke", "white")
+            .attr("stroke-width", 2);
+    }
+
+    // Store for replay
+    currentZoomData = { bob: bobData, person1: person1Data, person2: person2Data };
+}
+
+async function playMultiWalk() {
+    const bobZoom = currentZoomData.bob || [];
+    const person1Zoom = currentZoomData.person1 || [];
+    const person2Zoom = currentZoomData.person2 || [];
+
+    if (!bobZoom.length && !person1Zoom.length && !person2Zoom.length) return;
+
+    multiPlayBtn.disabled = true;
+    multiPlayBtn.textContent = "⏳ Playing...";
+
+    // Reset emoji positions
+    document.getElementById("bobMultiEmoji").style.transform = "translateX(0px)";
+    if (person1MultiEmoji) person1MultiEmoji.style.transform = "translateX(0px)";
+    if (person2MultiEmoji) person2MultiEmoji.style.transform = "translateX(0px)";
+
+    const timer4 = document.getElementById("timer4");
+    if (timer4) startTimer(timer4);
+
+    const allSteps = [
+        ...bobZoom.map(d => ({ time: d.time, type: 'bob' })),
+        ...person1Zoom.map(d => ({ time: d.time, type: 'person1' })),
+        ...person2Zoom.map(d => ({ time: d.time, type: 'person2' }))
+    ];
+
+    if (allSteps.length === 0) {
+        multiPlayBtn.disabled = false;
+        multiPlayBtn.textContent = "▶️ Play All Walks";
+        if (timer4) timer4.style.display = 'none';
+        return;
+    }
+
+    allSteps.sort((a, b) => a.time - b.time);
+
+    const baseTime = allSteps[0].time;
+    let maxAnimationTime = 0;
+
+    allSteps.forEach((step, i) => {
+        const delay = (step.time - baseTime) * 1000;
+        maxAnimationTime = Math.max(maxAnimationTime, delay);
+
+        setTimeout(() => {
+            let charElement;
+            let dotSelector;
+            let fillColor;
+
+            if (step.type === 'bob') {
+                charElement = document.getElementById("bobMultiEmoji");
+                dotSelector = ".bob-zoom-dot";
+                fillColor = "#007acc";
+            } else if (step.type === 'person1' && person1MultiEmoji) {
+                charElement = person1MultiEmoji;
+                dotSelector = ".person1-zoom-dot";
+                fillColor = "#6f42c1"; // Fixed purple for Person 1
+            } else if (step.type === 'person2' && person2MultiEmoji) {
+                charElement = person2MultiEmoji;
+                dotSelector = ".person2-zoom-dot";
+                fillColor = "#fd7e14"; // Fixed orange for Person 2
+            } else {
+                return; // Skip if element not found
+            }
+
+            // Animate the emoji character
+            takeStep(charElement);
+
+            // Animate the corresponding dot on the multiZoomChart
+            const dot = d3.select(charElement.closest('.slide').querySelector('#multiZoomChart')).selectAll(dotSelector)
+                .filter(d => d && d.time === step.time); // Match the specific dot by time
+
+            if (!dot.empty()) {
+                dot.transition()
+                    .duration(300)
+                    .attr("r", 10)
+                    .attr("fill", "#ff6b6b") // Highlight color during animation
+                    .attr("opacity", 1)
+                    .transition()
+                    .duration(300)
+                    .attr("r", 6)
+                    .attr("fill", fillColor) // Return to original color
+                    .attr("opacity", 0.8);
+            }
+        }, delay);
+    });
+
+    setTimeout(() => {
+        multiPlayBtn.disabled = false;
+        multiPlayBtn.textContent = "▶️ Play All Walks";
+        if (timer4) timer4.style.display = "none";
+    }, maxAnimationTime + 1000); // Add a small buffer at the end
 }
