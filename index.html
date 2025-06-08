@@ -40,40 +40,44 @@
 
         <!-- Slide 2: Control Character -->
         <div class="slide" id="slide2">
-            <h2>👤 This is NOT Bob</h2>
-            <p>This person represents our healthy control group. They have a normal, regular walking pattern that we'll use as a baseline for comparison.</p>
-            
-            <div id="controlCharacter" class="emoji">🧍‍♂️</div>
-            <div id="timer2" class="timer"></div>
-            
-            <p>Healthy individuals typically show consistent stride intervals with minimal variation. Their walking pattern serves as our reference point for identifying abnormal gait patterns.</p>
-            <button id="controlReplayBtn" class="secondary-btn">▶️ Play NOT Bob's Walk</button>
-            <div class="chart-container" id="controlChart" style="display: none;">
-                <svg id="chart1" width="200" height="400"></svg>
-                <svg id="zoomChart1" width="800" height="400"></svg> 
+            <h2>⚖️ Healthy Control Gait</h2>
+            <p>Compare a typical healthy walk pattern as a baseline for detecting abnormalities.</p>
+
+            <div class="compare-bobs-container">
+                <div class="emoji-row">
+                    <div id="controlCharacter" class="emoji">🧍‍♂️</div>
+                </div>
+                <div class="controls">
+                    <button id="controlReplayBtn" class="secondary-btn">▶️ Play NOT Bob's Walk</button>
+                </div>
             </div>
-            <button id="showControlBtn" class="primary-btn">📊 Show Control Pattern</button>
+
+            <div class="chart-container" id="controlChart" style="display: block;">
+                <h3>Full Walking Pattern</h3>
+                <svg id="chart1" width="800" height="200"></svg>
+            </div>
+
+            <div class="chart-container">
+                <h3>Zoomed View (10s)</h3>
+                <svg id="zoomChart1" width="800" height="400"></svg>
+                <div id="timer2" class="timer"></div>
+            </div>
+
             <div class="navigation-buttons">
                 <button class="prev-btn">← Previous</button>
-                <button id="nextBtn2" class="next-btn" style="display: none;">Next: Compare Patterns →</button>
+                <button id="nextBtn2" class="next-btn">Next: Compare Patterns →</button>
             </div>
         </div>
 
-        <!-- Slide 3: Comparison -->
+        <!-- Slide 3: Compare Gait Patterns -->
         <div class="slide" id="slide3">
-            <h2>📊 Compare Gait Patterns</h2>
-            <p>Now let's compare Bob's walking pattern with different medical conditions. Each condition affects walking in unique ways.</p>
+            <h2>Explore the Dataset!</h2>
+            <p>See how each condition affects walking in unique ways.</p>
             
             <div class="comparison-controls">
-                <label for="personSelect">Compare Bob with:</label>
                 <select id="personSelect">
                     <option value="">-- Select a condition --</option>
                 </select>
-                
-                <div class="checkbox-container">
-                    <input type="checkbox" id="showLines">
-                    <label for="showLines">Show connecting lines</label>
-                </div>
             </div>
 
             <!-- Disease Description Section - MOVED HERE for slide 3 -->
@@ -93,55 +97,55 @@
                 </div>
             </div>
             
-            <div class="chart-container">
-                <svg id="chart" width="1200" height="600"></svg>
+            <div class="chart-container" id="controlChart" style="display: block;">
+                <h3>Full Walking Pattern</h3>
+                <svg id="chart2" width="800" height="200"></svg>
             </div>
-            
+
+            <div class="chart-container">
+                <h3>Zoomed View (10s)</h3>
+                <svg id="zoomChart2" width="800" height="400"></svg>
+                <div id="timer3" class="timer"></div>
+            </div>
+
             <div class="navigation-buttons">
                 <button class="prev-btn">← Previous</button>
                 <button id="nextBtn3" class="next-btn">Next: Try it yourself! →</button>
             </div>
         </div>
 
-        <!-- Slide 4: Interactive Playground -->
+        <!-- Slide 4: Interactive Playground, where we have three people that are able to simulate the walk and the drop -->
         <div class="slide" id="slide4">
-            <h2>🎮 Interactive Playground</h2>
-            <p>Now it's your turn! Make Bob walk again and compare his patterns with previous recordings.</p>
-            
-            <div class="playground-container">
-                <div class="playground-left">
-                    <div class="bob-container">
-                        <span id="playgroundBob">🧍</span>
-                        <div id="timer4" class="timer"></div>
-                    </div>
-                    
-                    <div class="controls">
-                        <button id="playgroundStartBtn" class="primary-btn">🎬 Start New Recording</button>
-                        <button id="playgroundReplayBtn" class="secondary-btn" style="display: none;">🔁 Replay Walk</button>
-                    </div>
-                    
-                    <div id="playgroundStatus"></div>
-                </div>
-                
-                <div class="playground-right">
-                    <div class="comparison-controls">
-                        <label for="compareSelect">Compare with:</label>
-                        <select id="compareSelect">
-                            <option value="">-- Select a condition --</option>
-                        </select>
-                        
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="playgroundShowLines">
-                            <label for="playgroundShowLines">Show connecting lines</label>
-                        </div>
-                    </div>
+            <h2>⚖️ Bob vs Condition</h2>
+            <p>Compare Bob's walk with another person's gait pattern over time.</p>
 
-                    <div class="chart-container">
-                        <svg id="playgroundChart" width="100%" height="500" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet"></svg>
-                    </div>
+            <div class="compare-bobs-container">
+                <div class="emoji-row">
+                    <div id="bobVsEmoji">🧍</div>
+                    <div id="diseaseVsEmoji">🧍‍♂️</div>
+                </div>
+                <div class="controls">
+                    <button id="vsPlayBtn" class="secondary-btn">▶️ Play Walk</button>
                 </div>
             </div>
-            
+
+            <div class="comparison-controls">
+                <label for="vsSelect">Compare Bob with:</label>
+                <select id="vsSelect">
+                    <option value="">-- Select a condition --</option>
+                </select>
+            </div>
+
+            <div class="chart-container" id="vsLongChart">
+                <h3>Full Walking Pattern</h3>
+                <svg id="vsChart1" width="800" height="200"></svg>
+            </div>
+
+            <div class="chart-container" id="vsZoomChart">
+                <h3>Zoomed View (10s)</h3>
+                <svg id="vsZoomChart1" width="800" height="400"></svg>
+                <div id="timer3" class="timer"></div>
+            </div>
             <div class="navigation-buttons">
                 <button class="prev-btn">← Previous</button>
             </div>

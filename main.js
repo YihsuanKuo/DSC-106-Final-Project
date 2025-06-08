@@ -35,7 +35,7 @@ const DISEASE_DESCRIPTIONS = {
 
 // DOM elements
 let bobEl, startBtn, statusEl, svg, svg1, bobChartSvg, personSelect, replayBtn, legend, comparisonLabel, showLinesCheckbox;
-let nextBtn1, nextBtn2, nextBtn3, showControlBtn;
+let nextBtn1, nextBtn2, nextBtn3;
 
 // Store the last recorded pattern
 let lastBobPattern = null;
@@ -91,9 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
     showLinesCheckbox = document.getElementById("showLines");
     nextBtn1 = document.getElementById("nextBtn1");
     nextBtn2 = document.getElementById("nextBtn2");
-    nextBtn3 = document.getElementById("nextBtn3");
-    showControlBtn = document.getElementById("showControlBtn");
-    
+    nextBtn3 = document.getElementById("nextBtn3");    
     initializeApp();
 });
 
@@ -105,10 +103,16 @@ function initializeApp() {
         option.textContent = `${p.name} (${p.disease})`;
         personSelect.appendChild(option);
     });
-    
+
+    const vsSelect = document.getElementById("vsSelect");
+    SAMPLE_PEOPLE.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = `${p.name} (${p.disease})`;
+        vsSelect.appendChild(opt);
+    });
+    showControlPattern();
     setupEventListeners();
-    console.log('Gait analyzer initialized');
-    initializePlayground();
 }
 function showDiseaseDescription(personName, isPlayground = false) {
     const description = DISEASE_DESCRIPTIONS[personName];
@@ -172,7 +176,6 @@ function setupEventListeners() {
     if (nextBtn1) nextBtn1.addEventListener('click', () => goToSlide(1));
     if (nextBtn2) nextBtn2.addEventListener('click', () => goToSlide(2));
     if (nextBtn3) nextBtn3.addEventListener('click', () => goToSlide(3));
-    if (showControlBtn) showControlBtn.addEventListener('click', showControlPattern);
 
     personSelect.addEventListener("change", async () => {
         const selectedId = personSelect.value;
@@ -185,19 +188,15 @@ function setupEventListeners() {
             legend.style.display = "none";
             hideDiseaseDescription(); // Add this line
         }
-        
-        if (bobSteps.length > 0) {
-            const showLinesChecked = showLinesCheckbox ? showLinesCheckbox.checked : false;
-            await drawChart(currentComparison, null, showLinesChecked);
-        }
+        console.log('Person select changed:', selectedId);
+        const selectPerson = SAMPLE_PEOPLE[selectedId - 1]; // First person is control
+        console.log('Selected person:', selectPerson);
+        const selectIntervals = await loadCSVData(selectPerson);
+        // Pass controlIntervals as the data and controlPerson for color/details
+        drawLongChart(selectIntervals, selectPerson, d3.select('#chart2'), d3.select('#zoomChart2'));
+        drawZoomChart(selectIntervals, selectPerson, d3.select('#zoomChart2'), 0);
     });
-
-    showLinesCheckbox.addEventListener("change", async () => {
-        if (bobSteps.length > 0) {
-            await drawChart(currentComparison, null, showLinesCheckbox.checked);
-        }
-    });
-
+    
     // Slide indicators
     document.querySelectorAll('.dot').forEach((dot, index) => {
         dot.addEventListener('click', () => goToSlide(index));
@@ -211,6 +210,9 @@ function setupEventListeners() {
             }
         });
     });
+
+    document.getElementById("vsSelect").addEventListener("change", drawVsCharts);
+    document.getElementById("vsPlayBtn").addEventListener("click", playVsWalk);
 }
 
 function goToSlide(slideIndex) {
@@ -240,10 +242,13 @@ function goToSlide(slideIndex) {
     if (currentSlide === 0) {
         nextBtn1.disabled = bobSteps.length === 0;
     }
+
+    if (slideIndex === 2 && bobSteps.length >= 2) {
+        drawVsCharts();
+    }
 }
 
 let bobSteps = [], startTime = null, intervalId = null;
-let currentComparison = null;
 let loadedData = {}; // Cache for loaded CSV data
 
 function reset() {
@@ -254,7 +259,7 @@ function reset() {
     bobChartSvg.selectAll("*").remove();
     statusEl.textContent = "";
     replayBtn.style.display = "none";
-    legend.style.display = "none";
+    // legend.style.display = "none";
     document.getElementById("bobChart").style.display = "none";
     bobEl.style.transform = "translateX(0px)";
     if (nextBtn1) nextBtn1.disabled = true;
@@ -280,7 +285,10 @@ async function loadCSVData(person) {
     
     try {
         console.log(`Loading data from: ${person.file}`);
-        const data = await d3.csv(person.file);
+        const data = await d3.csv(person.file, d => ({
+            time: +d.time,
+            interval: +d.interval
+        }));
         console.log(`Loaded ${data.length} rows from ${person.file}`);
         loadedData[person.file] = data;
         return data;
@@ -320,37 +328,35 @@ function processStepsToData(steps) {
 
 async function showControlPattern() {
     const controlPerson = SAMPLE_PEOPLE[0]; // First person is control
+    console.log('Showing control pattern for:', controlPerson);
     const controlIntervals = await loadCSVData(controlPerson);
     const controlChart = document.getElementById('controlChart');
     controlChart.style.display = 'block';
-    showControlBtn.style.display = 'none';
     if (nextBtn2) nextBtn2.style.display = 'inline-block';
-    drawLongChart(controlIntervals, controlPerson, svg1);
+    // Pass controlIntervals as the data and controlPerson for color/details
+    drawLongChart(controlIntervals, controlPerson, svg1, d3.select('#zoomChart1'));
     drawZoomChart(controlIntervals, controlPerson, d3.select('#zoomChart1'), 0);
 }
 
-function drawLongChart(intervals, person, svg) {
+function drawLongChart(data, person, svg, zoomSvg, includeBrush = true, customBrushCallback = null) { // Removed 'bobData' and 'diseaseData', now accepts single 'data' and 'person'
     svg.selectAll("*").remove();
 
     const margin = { top: 20, right: 40, bottom: 60, left: 80 },
         width = 800 - margin.left - margin.right,
         height = 200 - margin.top - margin.bottom;
 
-    // x-axis: based on full time range in data
-    console.log([0, intervals[intervals.length - 1]?.time])
     const x = d3.scaleLinear()
-        .domain([0, intervals[intervals.length - 1]?.time])
+        .domain([0, d3.max(data, d => d.time)]) // Use 'data' directly
         .range([0, width]);
 
-    // y-axis: stride intervals in seconds
     const y = d3.scaleLinear()
-        .domain([d3.min(intervals,d => d.interval) - 0.05, d3.max(intervals, d => d.interval)])
+        .domain([0, Math.max(2, d3.max(data, d => d.interval))]) // Use 'data' directly
         .range([height, 0]);
 
-    const chart = svg1.append("g")
+    const chart = svg.append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // x-axis with label
+    // X-axis
     chart.append("g")
         .attr("transform", `translate(0,${height})`)
         .call(d3.axisBottom(x))
@@ -362,7 +368,7 @@ function drawLongChart(intervals, person, svg) {
         .style("font-size", "14px")
         .text("Time (seconds)");
 
-    // y-axis with label
+    // Y-axis
     chart.append("g")
         .call(d3.axisLeft(y))
         .append("text")
@@ -374,37 +380,51 @@ function drawLongChart(intervals, person, svg) {
         .style("font-size", "14px")
         .text("Stride Interval (s)");
 
-    // Data points
-    chart.selectAll(".control-dot")
-        .data(intervals)
+    // Data points (now for the single 'data' array)
+    chart.selectAll(".data-dot")
+        .data(data)
         .enter()
         .append("circle")
-        .attr("class", "control-dot")
+        .attr("class", "data-dot")
         .attr("cx", d => x(d.time))
         .attr("cy", d => y(d.interval))
         .attr("r", 6)
-        .attr("fill", person.color)
+        .attr("fill", person.color) // Use the color from the 'person' object
         .attr("opacity", 0.8)
         .attr("stroke", "white")
         .attr("stroke-width", 2);
 
-    // --- BRUSH for zoom selection ---
-    const brush = d3.brushX()
-        .extent([[0, 0], [width, height]])
-        .on("brush end", ({ selection }) => {
-            if (selection) {
+    // Brush remains the same, but it will operate on the single dataset
+    if (includeBrush) {
+        const brush = d3.brushX()
+            .extent([[0, 0], [width, height]])
+            .on("brush end", ({ selection }) => {
+                if (!selection) return;
                 const [x0, x1] = selection.map(x.invert);
-                drawZoomChart(intervals, person, d3.select('#zoomChart1'), x0, x1);
-            }
-        });
 
-    chart.append("g")
-        .attr("class", "brush")
-        .call(brush)
-        .call(brush.move, [0, 10].map(x));  // Initial 10s window
+                if (customBrushCallback) {
+                    // If a custom callback is provided, use it
+                    customBrushCallback(x0, x1); // Pass the brush range to the custom callback
+                } else {
+                    // Existing Slide 2 brush logic
+                    drawZoomChart(
+                        data.filter(d => d.time >= x0 && d.time <= x1), // Filter the single data array
+                        person, // Pass the person object
+                        zoomSvg,
+                        x0
+                    );
+                    currentZoomData = data.filter(d => d.time >= x0 && d.time <= x1); // Store for replay
+                }
+            });
+
+        chart.append("g")
+            .attr("class", "brush")
+            .call(brush)
+            .call(brush.move, [0, 10].map(x)); // Initial brush range
+    }
 }
 
-function drawZoomChart(intervals, person, svg, startTime = 0) {
+function drawZoomChart(intervals, person, svg, startTime = 0, comparisonData = null, comparisonPerson = null) {
     svg.selectAll("*").remove();
 
     const margin = { top: 20, right: 40, bottom: 60, left: 80 },
@@ -413,8 +433,12 @@ function drawZoomChart(intervals, person, svg, startTime = 0) {
 
     // Filter to only include intervals within the 10-second window
     const endTime = startTime + 10;
-    const zoomedData = intervals.filter(d => d.time >= startTime && d.time <= endTime);
-    currentZoomData = zoomedData; // <== store for replay
+    const zoomedData = intervals.filter(d => d.time >= startTime && d.time <= endTime); 
+    currentZoomData = zoomedData.map(d => ({ 
+        ...d, 
+        time: d.time - startTime 
+    }));
+    console.log('Zoomed data:', currentZoomData);
 
     const x = d3.scaleLinear()
         .domain([startTime, endTime])
@@ -467,6 +491,22 @@ function drawZoomChart(intervals, person, svg, startTime = 0) {
         .attr("opacity", 0.8)
         .attr("stroke", "white")
         .attr("stroke-width", 2);
+
+    if (comparisonData && comparisonPerson) {
+        const zoomedComparisonData = comparisonData.filter(d => d.time >= startTime && d.time <= endTime);
+        chart.selectAll(".comparison-zoom-dot")
+            .data(zoomedComparisonData)
+            .enter()
+            .append("circle")
+            .attr("class", "comparison-zoom-dot")
+            .attr("cx", d => x(d.time))
+            .attr("cy", d => y(d.interval))
+            .attr("r", 6)
+            .attr("fill", comparisonPerson.color)
+            .attr("opacity", 0.8)
+            .attr("stroke", "white")
+            .attr("stroke-width", 2);
+    }
 }
 
 function replayZoomSteps(zoomData, svgZoom) {
@@ -608,28 +648,14 @@ function drawBobChart(stepData) {
     }
 }
 
-async function drawChart(comparisonData = null, targetSvg = null, showLines = false) {
-    // If no target SVG is specified, use the appropriate one based on current slide
-    if (!targetSvg) {
-        targetSvg = currentSlide === 3 ? d3.select('#playgroundChart') : d3.select('#chart');
-    }
-    const svg = targetSvg;
-    svg.selectAll("*").remove();
+async function drawChart(showLines = false) {
+    // Always target the bobChartSvg for Slide 1
+    const svg = d3.select('#bobChartSvg');
+    svg.selectAll("*").remove(); // Clear previous content
 
     const bobStepData = processStepsToData(bobSteps);
-    let comparisonIntervals = [];
-    
-    if (comparisonData) {
-        try {
-            comparisonIntervals = await loadCSVData(comparisonData);
-            console.log(`Processed ${comparisonIntervals.length} intervals for ${comparisonData.name}`);
-        } catch (error) {
-            console.error('Error loading comparison data:', error);
-        }
-    }
 
-    const allData = [...bobStepData, ...comparisonIntervals];
-    if (allData.length === 0) {
+    if (bobStepData.length === 0) {
         console.warn('No data to display in chart');
         return;
     }
@@ -637,6 +663,7 @@ async function drawChart(comparisonData = null, targetSvg = null, showLines = fa
     // Get the SVG dimensions from the viewBox or actual size
     const svgElement = svg.node();
     const svgRect = svgElement.getBoundingClientRect();
+    // Use default values if SVG dimensions are not readily available (e.g., during testing or if not rendered)
     const width = svgRect.width || 800;
     const height = svgRect.height || 400;
     const margin = { top: 40, right: 40, bottom: 60, left: 60 };
@@ -647,15 +674,15 @@ async function drawChart(comparisonData = null, targetSvg = null, showLines = fa
     svg.attr("viewBox", `0 0 ${width} ${height}`);
 
     const x = d3.scaleLinear()
-        .domain([0, 10])
+        .domain([0, 10]) // Fixed domain for 10 seconds of Bob's walk
         .range([0, innerWidth]);
 
     const y = d3.scaleLinear()
-        .domain([0, Math.max(2, d3.max(allData, d => d.interval))])
+        .domain([0, Math.max(2, d3.max(bobStepData, d => d.interval))]) // Domain based on Bob's interval data
         .range([innerHeight, 0]);
 
     const chart = svg.append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+        .attr("transform", `translate(<span class="math-inline">\{margin\.left\},</span>{margin.top})`);
 
     // Add grid lines
     const xGrid = d3.axisBottom(x).tickSize(-innerHeight).tickFormat("");
@@ -733,50 +760,6 @@ async function drawChart(comparisonData = null, targetSvg = null, showLines = fa
             .attr("stroke", "white")
             .attr("stroke-width", 2);
     }
-
-    // Plot comparison data
-    if (comparisonIntervals.length > 0) {
-        // Add connecting line for comparison data if showLines is true
-        if (showLines) {
-            const comparisonLine = d3.line()
-                .x(d => x(d.time))
-                .y(d => y(d.interval))
-                .curve(d3.curveMonotoneX);
-
-            chart.append("path")
-                .datum(comparisonIntervals)
-                .attr("class", "comparison-line")
-                .attr("fill", "none")
-                .attr("stroke", comparisonData.color)
-                .attr("stroke-width", 2)
-                .attr("opacity", 0.3)
-                .attr("stroke-dasharray", "3,3")
-                .attr("d", comparisonLine);
-        }
-
-        chart.selectAll(".comparison-dot")
-            .data(comparisonIntervals)
-            .enter()
-            .append("circle")
-            .attr("class", "comparison-dot")
-            .attr("cx", d => x(d.time))
-            .attr("cy", d => y(d.interval))
-            .attr("r", 6)
-            .attr("fill", comparisonData.color)
-            .attr("opacity", 0.7)
-            .attr("stroke", "white")
-            .attr("stroke-width", 2);
-
-        if (legend && comparisonLabel) {
-            legend.style.display = "flex";
-            comparisonLabel.textContent = `${comparisonData.name} (${comparisonData.disease})`;
-            
-            const legendDot = document.querySelector('.legend-item:last-child .legend-dot');
-            if (legendDot) {
-                legendDot.style.backgroundColor = comparisonData.color;
-            }
-        }
-    }
 }
 
 function startWalk() {
@@ -813,17 +796,10 @@ function startWalk() {
                 document.getElementById("bobChart").style.display = "block";
             }
             
-            // Draw the main chart (either in slide 1 or playground)
-            drawChart(currentComparison, svg);
-            
             // Show replay button
             replayBtn.style.display = "inline-block";
             if (nextBtn1) nextBtn1.disabled = false;
             
-            // Update legend if needed
-            if (currentComparison) {
-                legend.style.display = "flex";
-            }
             startBtn.textContent = "🎬 Record again";
             startBtn.disabled = false;
         } else {
@@ -897,147 +873,230 @@ function replaySteps() {
     }, totalTime + 1000);
 }
 
-// Playground functionality
-function initializePlayground() {
-    const playgroundStartBtn = document.getElementById('playgroundStartBtn');
-    const playgroundReplayBtn = document.getElementById('playgroundReplayBtn');
-    const compareSelect = document.getElementById('compareSelect');
-    const playgroundBob = document.getElementById('playgroundBob');
-    const playgroundChartContainer = document.querySelector('#slide4 .chart-container');
-    const playgroundChart = d3.select('#playgroundChart');
-    const playgroundShowLines = document.getElementById('playgroundShowLines');
-    
-    // Make sure the chart container is visible
-    if (playgroundChartContainer) {
-        playgroundChartContainer.style.display = 'block';
-    }
-    
-    // Initialize the chart with empty state or existing data
-    if (!playgroundChart.empty()) {
-        playgroundChart.selectAll("*").remove();
-        const svgRect = playgroundChart.node().getBoundingClientRect();
-        const width = svgRect.width || 800;
-        const height = svgRect.height || 400;
-        
-        if (bobSteps.length > 0) {
-            // If we have existing data, show it
-            svg = playgroundChart;
-            drawChart(null, svg, playgroundShowLines.checked);
-        } else {
-            // Show placeholder message
-            playgroundChart
-                .attr("viewBox", `0 0 ${width} ${height}`)
-                .append("text")
-                .attr("x", width / 2)
-                .attr("y", height / 2)
-                .attr("text-anchor", "middle")
-                .attr("fill", "#666")
-                .style("font-size", "14px")
-                .text("Record steps to see the pattern");
-        }
-    }
-    
-    // Reset Bob's position
-    if (playgroundBob) {
-        playgroundBob.style.transform = 'translateX(0px)';
-        playgroundBob.style.transition = 'transform 0.3s ease';
-        
-        // Add click handler for Bob's movement
-        playgroundBob.addEventListener("click", (e) => {
-            e.preventDefault();
-            if (!isRecording) return; // Only allow movement during recording
-            
-            takeStep();
-            
-            // Only record steps if we're actively recording
-            if (isRecording && startTime) {
-                const now = performance.now();
-                const elapsed = now - startTime;
-                if (elapsed <= WALK_DURATION_MS) {
-                    bobSteps.push(elapsed);
-                    console.log(`Step recorded at ${elapsed}ms`);
-                }
-            }
-        });
+async function drawVsCharts() {
+    const vsSelect = document.getElementById("vsSelect");
+    const selectedPersonId = vsSelect.value;
+
+    if (!selectedPersonId || bobSteps.length === 0) {
+        d3.select("#vsChart1").selectAll("*").remove();
+        d3.select("#vsZoomChart1").selectAll("*").remove();
+        hideDiseaseDescription();
+        return;
     }
 
-    // Start recording button
-    if (playgroundStartBtn) {
-        playgroundStartBtn.addEventListener('click', () => {
-            // Update DOM references to use playground elements
-            bobEl = document.getElementById('playgroundBob');
-            statusEl = document.getElementById('playgroundStatus');
-            startBtn = document.getElementById('playgroundStartBtn');
-            replayBtn = document.getElementById('playgroundReplayBtn');
-            svg = playgroundChart;
-            
-            // Reset any previous state
-            reset();
-            bobEl.style.transform = 'translateX(0px)';
-            
-            // Use the same startWalk function from slide 1
-            startWalk();
-            
-            // Show replay button
-            if (playgroundReplayBtn) {
-                playgroundReplayBtn.style.display = 'inline-block';
-            }
-        });
-    }
+    const bobData = processStepsToData(bobSteps);
+    const selectedPerson = SAMPLE_PEOPLE.find(p => p.id == selectedPersonId);
+    // Ensure diseaseData is an array, even if loadCSVData returns null/undefined (re-added for robustness)
+    const diseaseData = await loadCSVData(selectedPerson) || []; 
 
-    // Replay button
-    if (playgroundReplayBtn) {
-        playgroundReplayBtn.addEventListener('click', () => {
-            // Update DOM references to use playground elements
-            bobEl = document.getElementById('playgroundBob');
-            replayBtn = document.getElementById('playgroundReplayBtn');
-            
-            // Reset position before replay
-            bobEl.style.transform = 'translateX(0px)';
-            
-            // Use the same replaySteps function from slide 1
-            replaySteps();
-        });
-    }
+    // Define the custom brush callback for Slide 3
+    const vsChartBrushCallback = (x0, x1) => {
+        // Bob's data remains unfiltered – always pass the full bobData
+        const filteredDiseaseData = diseaseData.filter(d => d.time >= x0 && d.time <= x1);
 
-    // Show lines checkbox
-    if (playgroundShowLines) {
-        playgroundShowLines.addEventListener('change', () => {
-            if (bobSteps.length > 0) {
-                svg = playgroundChart;
-                drawChart(currentComparison, svg, playgroundShowLines.checked);
-            }
-        });
-    }
+        const zoomSvg = d3.select('#vsZoomChart1');
+        drawZoomChart(
+            bobData, // Pass the FULL bobData here
+            { name: "Bob", color: "#007acc" }, // Bob's person object
+            zoomSvg,
+            0, // startTime is no longer used for x-axis domain in drawZoomChart, but keep for consistency
+            filteredDiseaseData, // The filtered disease data
+            selectedPerson // The selected disease person object
+        );
+        // Store full bobData and filtered diseaseData for replay on vs charts
+        currentZoomData = [bobData, filteredDiseaseData];
+    };
 
-    // Comparison select
-    if (compareSelect) {
-        // Initialize comparison options
-        SAMPLE_PEOPLE.forEach(p => {
-            const option = document.createElement("option");
-            option.value = p.id;
-            option.textContent = `${p.name} (${p.disease})`;
-            compareSelect.appendChild(option);
+    // Call drawLongChart for the full walking pattern with the custom brush callback
+    drawLongChart(
+        diseaseData, // Data for the long chart itself (disease data)
+        selectedPerson, // Person for the long chart itself
+        d3.select("#vsChart1"),
+        true, // Include brush
+        vsChartBrushCallback // Pass the custom callback
+    );
+
+    // Initial drawZoomChart for the full 0-10s range (before brush interaction)
+    drawZoomChart(
+        bobData, // Full bobData
+        { name: "Bob", color: "#007acc" },
+        d3.select("#vsZoomChart1"),
+        0, // startTime
+        diseaseData, // Full diseaseData
+        selectedPerson
+    );
+    // Initialize currentZoomData with the full range for initial replay
+    currentZoomData = [bobData, diseaseData];
+
+
+    showDiseaseDescription(selectedPerson.name);
+}
+// New function for comparison long chart
+function drawComparisonLongChart(bobData, bobPerson, diseaseData, diseasePerson, svg) {
+    svg.selectAll("*").remove();
+
+    const margin = { top: 20, right: 40, bottom: 60, left: 80 },
+        width = 800 - margin.left - margin.right,
+        height = 200 - margin.top - margin.bottom;
+
+    const allData = [...bobData, ...diseaseData];
+
+    const x = d3.scaleLinear()
+        .domain([0, d3.max(allData, d => d.time)])
+        .range([0, width]);
+
+    const y = d3.scaleLinear()
+        .domain([0, Math.max(2, d3.max(allData, d => d.interval))])
+        .range([height, 0]);
+
+    const chart = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // X-axis
+    chart.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x))
+        .append("text")
+        .attr("x", width / 2)
+        .attr("y", 40)
+        .attr("fill", "black")
+        .style("text-anchor", "middle")
+        .style("font-size", "14px")
+        .text("Time (seconds)");
+
+    // Y-axis
+    chart.append("g")
+        .call(d3.axisLeft(y))
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -50)
+        .attr("x", -height / 2)
+        .attr("fill", "black")
+        .style("text-anchor", "middle")
+        .style("font-size", "14px")
+        .text("Stride Interval (s)");
+
+    // Bob dots
+    chart.selectAll(".bob-dot")
+        .data(bobData)
+        .enter()
+        .append("circle")
+        .attr("class", "bob-dot")
+        .attr("cx", d => x(d.time))
+        .attr("cy", d => y(d.interval))
+        .attr("r", 6)
+        .attr("fill", "#007acc") // Bob's color
+        .attr("opacity", 0.8)
+        .attr("stroke", "white")
+        .attr("stroke-width", 2);
+
+    // Disease dots
+    chart.selectAll(".disease-dot")
+        .data(diseaseData)
+        .enter()
+        .append("circle")
+        .attr("class", "disease-dot")
+        .attr("cx", d => x(d.time))
+        .attr("cy", d => y(d.interval))
+        .attr("r", 6)
+        .attr("fill", diseasePerson.color) // Disease color
+        .attr("opacity", 0.8)
+        .attr("stroke", "white")
+        .attr("stroke-width", 2);
+
+    // Brush (similar to before, now filtering both datasets for the zoom chart)
+    const brush = d3.brushX()
+        .extent([[0, 0], [width, height]])
+        .on("brush end", ({ selection }) => {
+            if (!selection) return;
+            const [x0, x1] = selection.map(x.invert);
+            const zoomSvg = d3.select("#vsZoomChart1"); // This is specific to the comparison chart
+            drawZoomComparisonChart(
+                bobData.filter(d => d.time >= x0 && d.time <= x1),
+                diseaseData.filter(d => d.time >= x0 && d.time <= x1),
+                zoomSvg,
+                x0
+            );
+            currentZoomData = [
+                bobData.filter(d => d.time >= x0 && d.time <= x1),
+                diseaseData.filter(d => d.time >= x0 && d.time <= x1)
+            ];
         });
 
-        // Add change handler
-        compareSelect.addEventListener('change', async () => {
-            const selectedId = compareSelect.value;
-            if (selectedId) {
-                currentComparison = SAMPLE_PEOPLE.find(p => p.id == selectedId);
-                console.log('Selected comparison:', currentComparison);
-                showDiseaseDescription(currentComparison.name, true); // Add this line
-            } else {
-                currentComparison = null;
-                legend.style.display = "none";
-                hideDiseaseDescription(true); // Add this line
-            }
-            
-            // Use the same chart drawing function from slide 3
-            if (bobSteps.length > 0) {
-                svg = playgroundChart;
-                await drawChart(currentComparison, svg, playgroundShowLines.checked);
-            }
-        });
-    }
+    chart.append("g")
+        .attr("class", "brush")
+        .call(brush)
+        .call(brush.move, [0, 10].map(x));  // Initial brush range
+}
+
+function drawZoomComparisonChart(bob, disease, svg, startTime = 0) {
+    svg.selectAll("*").remove();
+    const margin = { top: 20, right: 40, bottom: 60, left: 80 },
+        width = 800 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    const endTime = startTime + 10;
+    const bobZoom = bob.filter(d => d.time >= startTime && d.time <= endTime);
+    const diseaseZoom = disease.filter(d => d.time >= startTime && d.time <= endTime);
+    console.log('diseaseZoom:', diseaseZoom);
+
+    const x = d3.scaleLinear().domain([startTime, endTime]).range([0, width]);
+    const y = d3.scaleLinear().domain([0, 2]).range([height, 0]);
+
+    const chart = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+    chart.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
+    chart.append("g").call(d3.axisLeft(y));
+
+    chart.selectAll(".bob-dot")
+        .data(bobZoom)
+        .enter().append("circle")
+        .attr("class", "bob-dot")
+        .attr("cx", d => x(d.time))
+        .attr("cy", d => y(d.interval))
+        .attr("r", 6)
+        .attr("fill", "#007acc")
+        .attr("opacity", 0.8);
+
+    chart.selectAll(".disease-dot")
+        .data(diseaseZoom)
+        .enter().append("circle")
+        .attr("class", "disease-dot")
+        .attr("cx", d => x(d.time))
+        .attr("cy", d => y(d.interval))
+        .attr("r", 6)
+        .attr("fill", "#dc3545")
+        .attr("opacity", 0.8);
+}
+
+function playVsWalk() {
+    const [bobZoom, diseaseZoom] = currentZoomData || [];
+    if (!bobZoom || !diseaseZoom) return;
+
+    const bobChar = document.getElementById("bobVsEmoji");
+    const disChar = document.getElementById("diseaseVsEmoji");
+    const timer3 = document.getElementById("timer3");
+
+    stepRight = true;
+    bobChar.style.transform = "translateX(0px)";
+    disChar.style.transform = "translateX(0px)";
+    if (timer3) startTimer(timer3);
+
+    const allSteps = [...bobZoom, ...diseaseZoom];
+    const maxTime = d3.max(allSteps, d => d.time);
+    const baseTime = d3.min(allSteps, d => d.time);
+
+    bobZoom.forEach((step, i) => {
+        const delay = (step.time - baseTime) * 1000;
+        setTimeout(() => takeStep(bobChar), delay);
+    });
+
+    diseaseZoom.forEach((step, i) => {
+        const delay = (step.time - baseTime) * 1000;
+        setTimeout(() => takeStep(disChar), delay);
+    });
+
+    setTimeout(() => {
+        if (timer3) timer3.style.display = "none";
+    }, (maxTime - baseTime) * 1000 + 1000);
 }
