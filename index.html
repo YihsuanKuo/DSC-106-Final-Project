@@ -116,38 +116,65 @@
 
         <!-- Slide 4: Interactive Playground, where we have three people that are able to simulate the walk and the drop -->
         <div class="slide" id="slide4">
-            <h2>⚖️ Bob vs Condition</h2>
-            <p>Compare Bob's walk with another person's gait pattern over time.</p>
+            <h2>🚶‍♀️🚶‍♂️🚶 Compare Three Gait Patterns</h2>
+            <p>Select two conditions to compare with Bob's recorded walk.</p>
 
-            <div class="compare-bobs-container">
-                <div class="emoji-row">
-                    <div id="bobVsEmoji">🧍</div>
-                    <div id="diseaseVsEmoji">🧍‍♂️</div>
+            <div class="compare-multi-container">
+                <div class="emoji-row-multi">
+                    <div id="bobMultiEmoji" class="emoji">🧍</div>
+                    <div id="person1MultiEmoji" class="emoji">🧍‍♂️</div>
+                    <div id="person2MultiEmoji" class="emoji">🚶‍♀️</div>
                 </div>
                 <div class="controls">
-                    <button id="vsPlayBtn" class="secondary-btn">▶️ Play Walk</button>
+                    <button id="multiPlayBtn" class="secondary-btn">▶️ Play All Walks</button>
                 </div>
             </div>
 
-            <div class="comparison-controls">
-                <label for="vsSelect">Compare Bob with:</label>
-                <select id="vsSelect">
-                    <option value="">-- Select a condition --</option>
-                </select>
+            <div class="multi-comparison-controls">
+                <div class="dropdown-group">
+                    <label for="personSelectMulti1">Compare Bob with:</label>
+                    <select id="personSelectMulti1">
+                        <option value="">-- Select Person 1 --</option>
+                    </select>
+                </div>
+                <div class="dropdown-group">
+                    <label for="personSelectMulti2">And with:</label>
+                    <select id="personSelectMulti2">
+                        <option value="">-- Select Person 2 --</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="chart-container" id="vsLongChart">
-                <h3>Full Walking Pattern</h3>
-                <svg id="vsChart1" width="800" height="200"></svg>
+            <div class="legend" id="multiLegend" style="display: none;">
+                <div class="legend-item">
+                    <div class="legend-dot" style="background-color: #007acc;"></div>
+                    <span>Bob's Pattern</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" id="person1LegendDot"></div>
+                    <span id="person1LegendLabel">Person 1</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" id="person2LegendDot"></div>
+                    <span id="person2LegendLabel">Person 2</span>
+                </div>
             </div>
 
-            <div class="chart-container" id="vsZoomChart">
-                <h3>Zoomed View (10s)</h3>
-                <svg id="vsZoomChart1" width="800" height="400"></svg>
-                <div id="timer3" class="timer"></div>
+            <div class="chart-group-long">
+                <div class="chart-container" id="longChart1">
+                    <h3>Person 1 Full Walking Pattern</h3>
+                    <svg id="multiChart1" width="800" height="200"></svg>
+                </div>
+                <div class="chart-container" id="longChart2">
+                    <h3>Person 2 Full Walking Pattern</h3>
+                    <svg id="multiChart2" width="800" height="200"></svg>
+                </div>
             </div>
-            <div class="navigation-buttons">
-                <button class="prev-btn">← Previous</button>
+
+            <div class="chart-container" id="zoomChartMultiContainer">
+                <h3>Zoomed View (10s) - All Three</h3>
+                <svg id="multiZoomChart" width="800" height="400"></svg>
+                <div id="timer4" class="timer"></div>
             </div>
         </div>
 

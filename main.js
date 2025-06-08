@@ -104,13 +104,13 @@ function initializeApp() {
         personSelect.appendChild(option);
     });
 
-    const vsSelect = document.getElementById("vsSelect");
-    SAMPLE_PEOPLE.forEach(p => {
-        const opt = document.createElement("option");
-        opt.value = p.id;
-        opt.textContent = `${p.name} (${p.disease})`;
-        vsSelect.appendChild(opt);
-    });
+    // const vsSelect = document.getElementById("vsSelect");
+    // SAMPLE_PEOPLE.forEach(p => {
+    //     const opt = document.createElement("option");
+    //     opt.value = p.id;
+    //     opt.textContent = `${p.name} (${p.disease})`;
+    //     vsSelect.appendChild(opt);
+    // });
     showControlPattern();
     setupEventListeners();
 }
