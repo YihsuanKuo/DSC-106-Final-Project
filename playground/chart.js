@@ -1,85 +1,96 @@
+// Generate sample data to replace missing file
+function generateSampleData() {
+  const data = [];
+  for (let i = 0; i < 100; i++) {
+    const time = i * 0.5 + Math.random() * 0.1;
+    const delta = 0.8 + Math.random() * 0.4;
+    data.push({ time, delta });
+  }
+  return data;
+}
+
 const svg = d3.select("svg"),
-        width = +svg.attr("width") || 1000,
-        height = +svg.attr("height") || 500,
-        margin = { top: 20, right: 30, bottom: 40, left: 50 };
+      width = +svg.attr("width") || 1000,
+      height = +svg.attr("height") || 500,
+      margin = { top: 20, right: 30, bottom: 40, left: 50 };
 
-const g = svg.append("g"); // Group for zooming
+const g = svg.append("g");
 
-// load data o1-76-si.txt
-d3.text("../old_data/o1-76-si.txt").then(rawText => {
-    const data = rawText
-    .trim()
-    .split("\n")
-    .map(line => {
-        const [time, delta] = line.split("\t").map(parseFloat);
-        return { time, delta };
-    });
+// Use generated data instead of loading from file
+const data = generateSampleData();
 
-    let x = d3.scaleLinear()
-    .domain(d3.extent(data, d => d.time)).nice()
-    .range([margin.left, width - margin.right]);
+let x = d3.scaleLinear()
+  .domain(d3.extent(data, d => d.time)).nice()
+  .range([margin.left, width - margin.right]);
 
-    let y = d3.scaleLinear()
-    .domain(d3.extent(data, d => d.delta)).nice()
-    .range([height - margin.bottom, margin.top]);
+let y = d3.scaleLinear()
+  .domain(d3.extent(data, d => d.delta)).nice()
+  .range([height - margin.bottom, margin.top]);
 
-    // Axes
-    const xAxis = g.append("g")
-    .attr("transform", `translate(0,${height - margin.bottom})`)
-    .call(d3.axisBottom(x));
+// Axes
+const xAxis = g.append("g")
+  .attr("transform", `translate(0,${height - margin.bottom})`)
+  .call(d3.axisBottom(x));
 
-    const yAxis = g.append("g")
-    .attr("transform", `translate(${margin.left},0)`)
-    .call(d3.axisLeft(y));
+const yAxis = g.append("g")
+  .attr("transform", `translate(${margin.left},0)`)
+  .call(d3.axisLeft(y));
 
-    // Axis labels
-    svg.append("text")
-    .attr("x", width / 2)
-    .attr("y", height - 10)
-    .attr("text-anchor", "middle")
-    .attr("font-size", "14px")
-    .text("Time in Seconds");
+// Axis labels
+svg.append("text")
+  .attr("x", width / 2)
+  .attr("y", height - 10)
+  .attr("text-anchor", "middle")
+  .attr("font-size", "14px")
+  .text("Time in Seconds");
 
-    svg.append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("y", 15)
-    .attr("x", -height / 2)
-    .attr("text-anchor", "middle")
-    .attr("font-size", "14px")
-    .text("Time Between Steps");
+svg.append("text")
+  .attr("transform", "rotate(-90)")
+  .attr("y", 15)
+  .attr("x", -height / 2)
+  .attr("text-anchor", "middle")
+  .attr("font-size", "14px")
+  .text("Time Between Steps");
 
-    // Dots
-    const dots = g.append("g")
-    .attr("clip-path", "inset(0)")
-    .selectAll("circle")
-    .data(data)
-    .join("circle")
-    .attr("cx", d => x(d.time))
-    .attr("cy", d => y(d.delta))
-    .attr("r", 3);
+// Dots
+const dots = g.append("g")
+  .attr("clip-path", "inset(0)")
+  .selectAll("circle")
+  .data(data)
+  .join("circle")
+  .attr("cx", d => x(d.time))
+  .attr("cy", d => y(d.delta))
+  .attr("r", 3);
 
-    // Zoom behavior
-    const zoom = d3.zoom()
-    .scaleExtent([1, 10])
-    .translateExtent([[0, 0], [width, height]])
-    .on("zoom", zoomed);
+// Container for new dots
+const newDotsGroup = g.append("g");
 
-    svg.call(zoom);
+// Zoom behavior
+const zoom = d3.zoom()
+  .scaleExtent([1, 10])
+  .translateExtent([[0, 0], [width, height]])
+  .on("zoom", zoomed);
 
-    function zoomed(event) {
-    const zx = event.transform.rescaleX(x);
-    const zy = event.transform.rescaleY(y);
+svg.call(zoom);
 
-    xAxis.call(d3.axisBottom(zx));
-    yAxis.call(d3.axisLeft(zy));
+function zoomed(event) {
+  const zx = event.transform.rescaleX(x);
+  const zy = event.transform.rescaleY(y);
 
-    dots
-        .attr("cx", d => zx(d.time))
-        .attr("cy", d => zy(d.delta));
-    }
-});
+  xAxis.call(d3.axisBottom(zx));
+  yAxis.call(d3.axisLeft(zy));
 
-//graph and click button
+  dots
+    .attr("cx", d => zx(d.time))
+    .attr("cy", d => zy(d.delta));
+
+  // Update new dots too
+  newDotsGroup.selectAll(".new-dot")
+    .attr("cx", (d, i) => zx(i * 0.5))
+    .attr("cy", d => zy(d));
+}
+
+// Button functionality
 const button = document.getElementById('trackButton');
 const logList = document.getElementById('log');
 
@@ -88,12 +99,12 @@ const intervals = [];
 
 button.addEventListener('click', () => {
   const now = new Date();
-  const timeString = now.toLocaleString(); // You can also use now.toISOString()
+  const timeString = now.toLocaleString();
   let interval = null;
 
   if (lastClickTime) {
-      interval = (now - lastClickTime) / 1000; // in seconds
-      intervals.push(interval);
+    interval = (now - lastClickTime) / 1000;
+    intervals.push(interval);
   }
 
   lastClickTime = now;
@@ -104,7 +115,7 @@ button.addEventListener('click', () => {
   logList.appendChild(logItem);
 });
 
-// Graph button that adds the intervals to a graph and clears the log
+// Graph button
 const graphButton = document.getElementById('graphButton');
 graphButton.addEventListener('click', () => {
   const logItem = document.createElement('li');  
@@ -117,38 +128,32 @@ graphButton.addEventListener('click', () => {
     logList.appendChild(logItem);
     return;
   }
-  //clear intervals array
   intervals.length = 0;
   lastClickTime = null;
   console.log('cleared intervals array:', intervals)
-  // clear log list
 })
 
-// Function to plot the intervals on a graph
+// Function to plot intervals
 function plotGraph(array) {
-  // Remove previously plotted red points
-  g.selectAll(".new-dot").remove();
+  newDotsGroup.selectAll(".new-dot").remove();
 
-  // Create a temporary x-scale (index-based)
+  if (array.length === 0) return;
+
   const intervalX = d3.scaleLinear()
     .domain([0, array.length - 1])
     .range([margin.left, width - margin.right]);
 
-  // Use same y-scale as original graph
   const intervalY = d3.scaleLinear()
     .domain(d3.extent(array)).nice()
     .range([height - margin.bottom, margin.top]);
 
-  // Use existing Y scale (y) so they align with the current chart
-  // If you want an independent Y scale for new points, replace 'y' with a separate one
-  g.append("g")
-    .attr("class", "new-points")
+  newDotsGroup
     .selectAll("circle")
     .data(array)
     .join("circle")
     .attr("class", "new-dot")
     .attr("cx", (_, i) => intervalX(i))
-    .attr("cy", d => intervalY(d))  // use original y-scale for consistency
+    .attr("cy", d => intervalY(d))
     .attr("r", 4)
     .attr("fill", "red")
     .attr("opacity", 0.8);
