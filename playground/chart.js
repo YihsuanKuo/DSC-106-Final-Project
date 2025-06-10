@@ -1,10 +1,25 @@
-// Generate sample data to replace missing file
 function generateSampleData() {
   const data = [];
-  for (let i = 0; i < 100; i++) {
-    const time = i * 0.5 + Math.random() * 0.1;
-    const delta = 0.8 + Math.random() * 0.4;
-    data.push({ time, delta });
+  let cumulativeTime = 0;
+  
+  // Use fixed seed values to make data consistent
+  const seed = 12345;
+  function seededRandom(i) {
+    const x = Math.sin(seed + i * 9999) * 10000;
+    return x - Math.floor(x);
+  }
+  
+  for (let i = 0; i < 150; i++) {
+    // Normal gait: around 1.0-1.2 seconds between steps with natural variation
+    const baseInterval = 1.05; // Average step interval
+    const variation = (seededRandom(i) - 0.5) * 0.3; // ±0.15 seconds variation
+    const delta = baseInterval + variation;
+    
+    // Ensure delta stays in realistic range
+    const clampedDelta = Math.max(0.7, Math.min(1.4, delta));
+    
+    data.push({ time: cumulativeTime, delta: clampedDelta });
+    cumulativeTime += clampedDelta;
   }
   return data;
 }
